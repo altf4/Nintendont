@@ -10,6 +10,9 @@
 #include "debug.h"
 #include "net.h"
 
+#define ENET_IMPLEMENTATION
+#include "enet.h"
+
 // File descriptor for the IOS socket driver, shared by all Slippi threads
 s32 top_fd ALIGNED(32);
 
