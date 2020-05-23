@@ -466,7 +466,6 @@ void listenForClient()
  */
 static u8 readBuf[READ_BUF_SIZE];
 static SlpGameReader reader;
-static u32 maxBufUsage = 0;
 s32 handleFileTransfer()
 {
 	// Do nothing if we aren't connected to a client
@@ -508,6 +507,7 @@ s32 handleFileTransfer()
 		return res;
 	}
 
+	// static u32 maxBufUsage = 0;
 	// if (reader.lastReadResult.bytesRead >= maxBufUsage) {
 	// 	dbgprintf("[NEW BUF USAGE MAX] Old: %d, New: %d\r\n", maxBufUsage, reader.lastReadResult.bytesRead);
 	// 	maxBufUsage = reader.lastReadResult.bytesRead;
