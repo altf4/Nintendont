@@ -10,9 +10,6 @@
 #include "debug.h"
 #include "net.h"
 
-#define ENET_IMPLEMENTATION
-#include "enet.h"
-
 // File descriptor for the IOS socket driver, shared by all Slippi threads
 s32 top_fd ALIGNED(32);
 
@@ -198,20 +195,16 @@ s32 listen(s32 fd, s32 socket, u32 backlog)
  * Accept a connection on some socket.
  * Returns a file descriptor representing the remote client.
  */
-s32 accept(s32 fd, s32 socket)
+s32 accept(s32 fd, s32 socket, struct sockaddr *addr)
 {
 	s32 res;
 
 	// Ioctl len_in is 4
 	STACK_ALIGN(u32, params, 1, 32);
-	STACK_ALIGN(struct sockaddr, addr, 1, 32);
 
 	if (fd < 0) return -62;
 
 	*params = socket;
-
-	addr->sa_len = 8;
-	addr->sa_family = AF_INET;
 
 	res = IOS_Ioctl(fd, IOCTL_SO_ACCEPT, params, 4, addr, 8);
 

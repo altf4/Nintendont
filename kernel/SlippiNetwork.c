@@ -15,6 +15,8 @@
 #include "ff_utf8.h"
 #include "Config.h"
 
+#define ENET_IMPLEMENTATION
+#include "enet.h"
 
 /* The game can transfer at most 784 bytes / frame.
  *
@@ -441,7 +443,10 @@ void listenForClient()
 		return;
 
 	// Block here until we accept a new client connection
-	s32 socket = accept(top_fd, server_sock);
+	STACK_ALIGN(struct sockaddr, addr, 1, 32);
+	addr->sa_len = 8;
+	addr->sa_family = AF_INET;
+	s32 socket = accept(top_fd, server_sock, addr);
 
 	// If the socket isn't valid, accept() returned some error
 	if (socket < 0)
