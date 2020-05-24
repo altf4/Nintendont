@@ -539,7 +539,7 @@ s32 handleFileTransfer()
  */
 static u32 SlippiNetworkHandlerThread(void *arg)
 {
-
+	dbgprintf ("Networking thread started.\n");
 	ENetAddress address;
 	ENetHost * server;
 	/* Bind the server to the default localhost.     */
@@ -555,24 +555,10 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 																0      /* assume any amount of outgoing bandwidth */);
 	while (1)
 	{
-		// int status = getConnectionStatus();
-		// switch (status)
-		// {
-		// case CONN_STATUS_NO_SERVER:
-		// 	startServer();
-		// 	break;
-		// case CONN_STATUS_NO_CLIENT:
-		// 	listenForClient();
-		// 	break;
-		// case CONN_STATUS_CONNECTED:
-		// 	handleFileTransfer();
-		// 	checkAlive();
-		// 	break;
-		// }
-
+		dbgprintf ("NETWORKING: ENet Loop.                        :)\n");
 		ENetEvent event;
 		/* Wait up to 1000 milliseconds for an event. */
-		while (enet_host_service (server, & event, 0) > 0)
+		while (enet_host_service (server, & event, 1000) > 0)
 		{
 				switch (event.type)
 				{
@@ -600,12 +586,12 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 						event.peer -> data = NULL;
 						break;
 				default:
-					dbgprintf ("%s Unknown message came in.\n", event.peer -> data);
+					dbgprintf ("Unknown message came in.\n");
 					break;
 				}
 		}
 
-		mdelay(THREAD_CYCLE_TIME_MS);
+		mdelay(THREAD_CYCLE_TIME_MS * 250);
 	}
 
 	return 0;
