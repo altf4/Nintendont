@@ -5110,21 +5110,13 @@ extern "C" {
     } /* enet_socket_send */
 
     int enet_socket_receive(ENetSocket socket, ENetAddress *address, ENetBuffer *buffers, size_t bufferCount) {
-        struct msghdr msgHdr;
-        struct sockaddr_in sin;
+        // struct sockaddr_in sin;
         int recvLength;
 
-        memset(&msgHdr, 0, sizeof(struct msghdr));
-
-        if (address != NULL) {
-            msgHdr.msg_name    = (char*)&sin;
-            msgHdr.msg_namelen = sizeof(struct sockaddr_in);
-        }
-
-        msgHdr.msg_iov    = (struct iovec *) buffers;
-        msgHdr.msg_iovlen = bufferCount;
-
-        recvLength = recvmsg(socket, &msgHdr, MSG_NOSIGNAL);
+        // TODO WHAT FLAGS?!
+        u32 flags = 0;
+        recvLength = recvfrom(top_fd, socket, buffers[0].data, buffers[0].dataLength, 0);
+        // recvLength = recvmsg(socket, &msgHdr, MSG_NOSIGNAL);
 
         if (recvLength == -1) {
             if (errno == EWOULDBLOCK) {
@@ -5134,14 +5126,11 @@ extern "C" {
             return -1;
         }
 
-        if (msgHdr.msg_flags & MSG_TRUNC) {
-            return -1;
-        }
-
-        if (address != NULL) {
-            address->host           = sin.sin_addr;
-            address->port           = ENET_NET_TO_HOST_16(sin.sin_port);
-        }
+        //TODO Set this address somehow. It used to be set by msghdr
+        // if (address != NULL) {
+        //     address->host           = sin.sin_addr;
+        //     address->port           = ENET_NET_TO_HOST_16(sin.sin_port);
+        // }
 
         return recvLength;
     } /* enet_socket_receive */

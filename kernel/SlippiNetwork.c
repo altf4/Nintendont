@@ -598,6 +598,10 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 						dbgprintf ("%s disconnected.\n", event.peer -> data);
 						/* Reset the peer's client information. */
 						event.peer -> data = NULL;
+						break;
+				default:
+					dbgprintf ("%s Unknown message came in.\n", event.peer -> data);
+					break;
 				}
 		}
 
