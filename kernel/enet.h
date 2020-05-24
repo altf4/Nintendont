@@ -1261,7 +1261,7 @@ extern "C" {
 // !
 // =======================================================================//
 
-    static ENetCallbacks callbacks = { malloc, free, abort };
+    static ENetCallbacks callbacks = { malloc, free };
 
     int enet_initialize_with_callbacks(ENetVersion version, const ENetCallbacks *inits) {
         if (version < ENET_VERSION_CREATE(1, 3, 0)) {
@@ -4901,11 +4901,13 @@ extern "C" {
         static uint64_t start_time_ns = 0;
 
         struct timespec ts;
-    #if defined(CLOCK_MONOTONIC_RAW)
-        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    #else
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-    #endif
+        ts.tv_sec = GetCurrentTime();
+        ts.tv_nsec = 0;
+    // #if defined(CLOCK_MONOTONIC_RAW)
+    //     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+    // #else
+    //     clock_gettime(CLOCK_MONOTONIC, &ts);
+    // #endif
 
         static const uint64_t ns_in_s = 1000 * 1000 * 1000;
         static const uint64_t ns_in_ms = 1000 * 1000;
@@ -4951,7 +4953,7 @@ extern "C" {
     void enet_deinitialize(void) {}
 
     enet_uint64 enet_host_random_seed(void) {
-        return (enet_uint64) time(NULL);
+        return (enet_uint64) GetCurrentTime(NULL);
     }
 
     int enet_address_set_host_ip(ENetAddress *address, const char *name) {
