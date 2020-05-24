@@ -547,7 +547,7 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 	/* enet_address_set_host (& address, "x.x.x.x"); */
 	address.host = ENET_HOST_ANY;
 	/* Bind the server to port 1234. */
-	address.port = 1234;
+	address.port = SERVER_PORT;
 	server = enet_host_create (& address /* the address to bind the server host to */,
 															 32      /* allow up to 32 clients and/or outgoing connections */,
 																2      /* allow up to 2 channels to be used, 0 and 1 */,
@@ -572,7 +572,7 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 
 		ENetEvent event;
 		/* Wait up to 1000 milliseconds for an event. */
-		while (enet_host_service (server, & event, 1000) > 0)
+		while (enet_host_service (server, & event, 0) > 0)
 		{
 				switch (event.type)
 				{
