@@ -369,12 +369,6 @@ int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 	return 0;
 }
 
-int getsockopt(int sockfd, int level, int optname,
-							 void *optval, socklen_t *optlen)
-{
-	return 0;
-}
-
 // TODO maybe this needs to be properly implemented? For now we just close()
 int shutdown(s32 fd, int socket, int how)
 {

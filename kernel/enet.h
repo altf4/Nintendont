@@ -927,7 +927,7 @@ extern "C" {
     ENET_API int        enet_socket_receive(ENetSocket, ENetAddress *, ENetBuffer *, size_t);
     ENET_API int        enet_socket_wait(ENetSocket, enet_uint32 *, enet_uint64);
     ENET_API int        enet_socket_set_option(ENetSocket, ENetSocketOption, int);
-    ENET_API int        enet_socket_get_option(ENetSocket, ENetSocketOption, int *);
+    // ENET_API int        enet_socket_get_option(ENetSocket, ENetSocketOption, int *);
     ENET_API int        enet_socket_shutdown(ENetSocket, ENetSocketShutdown);
     ENET_API void       enet_socket_destroy(ENetSocket);
     ENET_API int        enet_socketset_select(ENetSocket, ENetSocketSet *, ENetSocketSet *, enet_uint32);
@@ -5014,21 +5014,21 @@ extern "C" {
         return result == -1 ? -1 : 0;
     } /* enet_socket_set_option */
 
-    int enet_socket_get_option(ENetSocket socket, ENetSocketOption option, int *value) {
-        int result = -1;
-        socklen_t len;
-
-        switch (option) {
-            case ENET_SOCKOPT_ERROR:
-                len    = sizeof(int);
-                result = getsockopt(socket, SOL_SOCKET, SO_ERROR, value, &len);
-                break;
-
-            default:
-                break;
-        }
-        return result == -1 ? -1 : 0;
-    }
+    // int enet_socket_get_option(ENetSocket socket, ENetSocketOption option, int *value) {
+    //     int result = -1;
+    //     socklen_t len;
+    //
+    //     switch (option) {
+    //         case ENET_SOCKOPT_ERROR:
+    //             len    = sizeof(int);
+    //             result = getsockopt(socket, SOL_SOCKET, SO_ERROR, value, &len);
+    //             break;
+    //
+    //         default:
+    //             break;
+    //     }
+    //     return result == -1 ? -1 : 0;
+    // }
 
     int enet_socket_connect(ENetSocket socket, const ENetAddress *address) {
         struct sockaddr_in sin;
