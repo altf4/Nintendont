@@ -380,7 +380,21 @@ int getsockopt(int sockfd, int level, int optname,
 	return 0;
 }
 
-int shutdown(int socket, int how)
+// TODO maybe this needs to be properly implemented? For now we just close()
+int shutdown(s32 fd, int socket, int how)
 {
-	return 0;
+	return close(fd, socket);
+}
+
+struct sockaddr_in getServerIP()
+{
+	struct sockaddr_in address;
+	memset(&address, '\0', sizeof(address));
+
+	address.sin_family = AF_INET;
+	address.sin_port = 51441;
+	address.sin_addr.s_addr = current_ip_address;
+
+	return address;
+
 }

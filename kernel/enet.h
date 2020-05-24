@@ -4315,9 +4315,13 @@ extern "C" {
         enet_socket_set_option(host->socket, ENET_SOCKOPT_SNDBUF, ENET_HOST_SEND_BUFFER_SIZE);
         enet_socket_set_option(host->socket, ENET_SOCKOPT_IPV6_V6ONLY, 0);
 
-        if (address != NULL && enet_socket_get_address(host->socket, &host->address) < 0) {
-            host->address = *address;
-        }
+        // if (address != NULL && enet_socket_get_address(host->socket, &host->address) < 0) {
+        //     host->address = *address;
+        // }
+
+        struct sockaddr_in server_addr = getServerIP();
+        host->address.host = server_addr.sin_addr;
+        host->address.port = server_addr.sin_port;
 
         if (!channelLimit || channelLimit > ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT) {
             channelLimit = ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT;
@@ -5068,7 +5072,7 @@ extern "C" {
     }
 
     int enet_socket_shutdown(ENetSocket socket, ENetSocketShutdown how) {
-        return shutdown(socket, (int) how);
+        return shutdown(top_fd, socket, (int) how);
     }
 
     void enet_socket_destroy(ENetSocket socket) {

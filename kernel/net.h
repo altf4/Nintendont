@@ -194,7 +194,9 @@ int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 int getsockname(s32 fd, int sockfd, struct sockaddr_in *addr);
 int getsockopt(int sockfd, int level, int optname,
 							 void *optval, socklen_t *optlen);
-int shutdown(int socket, int how);
+int shutdown(s32 fd, int socket, int how);
+
+struct sockaddr_in getServerIP();
 
 /* TODO NEEDED FOR ENET
 
@@ -203,10 +205,6 @@ getnameinfo
 getsockname
 getsockopt
 shutdown
-
-	These two don't have homes?
-recvmsg
-
 
 */
 
