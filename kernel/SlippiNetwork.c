@@ -310,7 +310,7 @@ s32 startServer()
 		return server_sock;
 	}
 
-	res = bind(top_fd, server_sock, (struct sockaddr *)&server);
+	res = bind(top_fd, server_sock, &server);
 	if (res < 0)
 	{
 		stopServer();
@@ -443,9 +443,9 @@ void listenForClient()
 		return;
 
 	// Block here until we accept a new client connection
-	STACK_ALIGN(struct sockaddr, addr, 1, 32);
-	addr->sa_len = 8;
-	addr->sa_family = AF_INET;
+	STACK_ALIGN(struct sockaddr_in, addr, 1, 32);
+	addr->sin_len = 8;
+	addr->sin_family = AF_INET;
 	s32 socket = accept(top_fd, server_sock, addr);
 
 	// If the socket isn't valid, accept() returned some error

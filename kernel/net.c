@@ -150,7 +150,7 @@ s32 close(s32 fd, s32 socket)
 /* bind()
  * Bind some name to some socket.
  */
-s32 bind(s32 fd, s32 socket, struct sockaddr *name)//, socklen_t address_len)
+s32 bind(s32 fd, s32 socket, struct sockaddr_in *name)//, socklen_t address_len)
 {
 	s32 res;
 
@@ -158,7 +158,7 @@ s32 bind(s32 fd, s32 socket, struct sockaddr *name)//, socklen_t address_len)
 
 	if (fd < 0) return -62;
 
-	name->sa_len = 8;
+	name->sin_len = 8;
 
 	memset(params, 0, sizeof(struct bind_params));
 	params->socket = socket;
@@ -195,7 +195,7 @@ s32 listen(s32 fd, s32 socket, u32 backlog)
  * Accept a connection on some socket.
  * Returns a file descriptor representing the remote client.
  */
-s32 accept(s32 fd, s32 socket, struct sockaddr *addr)
+s32 accept(s32 fd, s32 socket, struct sockaddr_in *addr)
 {
 	s32 res;
 
@@ -284,14 +284,14 @@ s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags)
 /* connect()
  * Connect to some remote server.
  */
-s32 connect(s32 fd, s32 socket, struct sockaddr *name)
+s32 connect(s32 fd, s32 socket, struct sockaddr_in *name)
 {
 	s32 res;
 	STACK_ALIGN(struct connect_params, params, 1, 32);
 
 	if (fd < 0) return -62;
 
-	name->sa_len = 8;
+	name->sin_len = 8;
 
 	memset(params, 0, sizeof(struct connect_params));
 	params->socket = socket;

@@ -79,7 +79,7 @@ s32 startBroadcast()
 	discover_sock = socket(top_fd, AF_INET, SOCK_DGRAM, IPPROTO_IP);
 
 	// Start indicating our status to clients on the local network
-	res = connect(top_fd, discover_sock, (struct sockaddr *)&discover);
+	res = connect(top_fd, discover_sock, &discover);
 
 	// Initialize the broadcast message timer
 	broadcast_ts = read32(HW_TIMER);

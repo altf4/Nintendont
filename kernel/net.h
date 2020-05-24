@@ -149,13 +149,28 @@ int NCDInit(void);
 void InitMacAddress(void);
 s32 socket(s32 fd, u32 domain, u32 type, u32 protocol);
 s32 close(s32 fd, s32 socket);
-s32 bind(s32 fd, s32 socket, struct sockaddr *name);
+s32 bind(s32 fd, s32 socket, struct sockaddr_in *name);
 s32 listen(s32 fd, s32 socket, u32 backlog);
-s32 accept(s32 fd, s32 socket, struct sockaddr *addr);
+s32 accept(s32 fd, s32 socket, struct sockaddr_in *addr);
 s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags);
-s32 connect(s32 fd, s32 socket, struct sockaddr *name);
+s32 connect(s32 fd, s32 socket, struct sockaddr_in *name);
 s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags);
 s32 setsockopt(s32 fd, s32 socket, u32 level, u32 optname, void *optval, u32 optlen);
 s32 poll(s32 fd, struct pollsd *sds, s32 nsds, s32 timeout);
+
+/* TODO NEEDED FOR ENET
+
+getaddrinfo
+getnameinfo
+getsockname
+getsockopt
+shutdown
+
+	These two don't have homes?
+sendmsg
+recvmsg
+
+
+*/
 
 #endif
