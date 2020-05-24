@@ -191,7 +191,6 @@ int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
                  char *serv, socklen_t servlen, int flags);
 
 
-int getsockname(s32 fd, int sockfd, struct sockaddr_in *addr);
 int getsockopt(int sockfd, int level, int optname,
 							 void *optval, socklen_t *optlen);
 int shutdown(s32 fd, int socket, int how);
@@ -202,9 +201,7 @@ struct sockaddr_in getServerIP();
 
 getaddrinfo
 getnameinfo
-getsockname
 getsockopt
-shutdown
 
 */
 

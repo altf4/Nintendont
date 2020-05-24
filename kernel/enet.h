@@ -919,7 +919,7 @@ extern "C" {
     /** ENet socket functions */
     ENET_API ENetSocket enet_socket_create(ENetSocketType);
     ENET_API int        enet_socket_bind(ENetSocket, const ENetAddress *);
-    ENET_API int        enet_socket_get_address(ENetSocket, ENetAddress *);
+    // ENET_API int        enet_socket_get_address(ENetSocket, ENetAddress *);
     ENET_API int        enet_socket_listen(ENetSocket, int);
     ENET_API ENetSocket enet_socket_accept(ENetSocket, ENetAddress *);
     ENET_API int        enet_socket_connect(ENetSocket, const ENetAddress *);
@@ -4944,17 +4944,17 @@ extern "C" {
         return bind(top_fd, socket, (struct sockaddr_in *)&sin);
     }
 
-    int enet_socket_get_address(ENetSocket socket, ENetAddress *address) {
-        struct sockaddr_in sin;
-        if (getsockname(top_fd, socket, (struct sockaddr_in *) &sin) == -1) {
-            return -1;
-        }
-
-        address->host           = sin.sin_addr;
-        address->port           = ENET_NET_TO_HOST_16(sin.sin_port);
-
-        return 0;
-    }
+    // int enet_socket_get_address(ENetSocket socket, ENetAddress *address) {
+    //     struct sockaddr_in sin;
+    //     if (getsockname(top_fd, socket, (struct sockaddr_in *) &sin) == -1) {
+    //         return -1;
+    //     }
+    //
+    //     address->host           = sin.sin_addr;
+    //     address->port           = ENET_NET_TO_HOST_16(sin.sin_port);
+    //
+    //     return 0;
+    // }
 
     int enet_socket_listen(ENetSocket socket, int backlog) {
         return listen(top_fd, socket, backlog < 0 ? SOMAXCONN : backlog);

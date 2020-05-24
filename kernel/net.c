@@ -369,11 +369,6 @@ int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 	return 0;
 }
 
-int getsockname(s32 fd, int sockfd, struct sockaddr_in *addr)
-{
-	return 0;
-}
-
 int getsockopt(int sockfd, int level, int optname,
 							 void *optval, socklen_t *optlen)
 {
