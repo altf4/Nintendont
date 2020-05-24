@@ -385,11 +385,6 @@ int shutdown(int socket, int how)
 	return 0;
 }
 
-int sendmsg(int sockfd, const struct msghdr *msg, int flags)
-{
-	return 0;
-}
-
 int recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
 	return 0;

@@ -1060,123 +1060,6 @@ extern "C" {
 // =======================================================================//
 
 #if defined(_MSC_VER)
-
-    #define ENET_AT_CASSERT_PRED(predicate) sizeof(char[2 * !!(predicate)-1])
-    #define ENET_IS_SUPPORTED_ATOMIC(size) ENET_AT_CASSERT_PRED(size == 1 || size == 2 || size == 4 || size == 8)
-    #define ENET_ATOMIC_SIZEOF(variable) (ENET_IS_SUPPORTED_ATOMIC(sizeof(*(variable))), sizeof(*(variable)))
-
-    __inline int64_t enet_at_atomic_read(char *ptr, size_t size)
-    {
-        switch (size) {
-            case 1:
-                return _InterlockedExchangeAdd8((volatile char *)ptr, 0);
-            case 2:
-                return _InterlockedExchangeAdd16((volatile SHORT *)ptr, 0);
-            case 4:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedExchangeAdd((volatile LONG *)ptr, 0);
-    #else
-                return _InterlockedExchangeAdd((volatile LONG *)ptr, 0);
-    #endif
-            case 8:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedExchangeAdd64((volatile LONGLONG *)ptr, 0);
-    #else
-                return _InterlockedExchangeAdd64((volatile LONGLONG *)ptr, 0);
-    #endif
-            default:
-                return 0xbad13bad; /* never reached */
-        }
-    }
-
-    __inline int64_t enet_at_atomic_write(char *ptr, int64_t value, size_t size)
-    {
-        switch (size) {
-            case 1:
-                return _InterlockedExchange8((volatile char *)ptr, (char)value);
-            case 2:
-                return _InterlockedExchange16((volatile SHORT *)ptr, (SHORT)value);
-            case 4:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedExchange((volatile LONG *)ptr, (LONG)value);
-    #else
-                return _InterlockedExchange((volatile LONG *)ptr, (LONG)value);
-    #endif
-            case 8:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedExchange64((volatile LONGLONG *)ptr, (LONGLONG)value);
-    #else
-                return _InterlockedExchange64((volatile LONGLONG *)ptr, (LONGLONG)value);
-    #endif
-            default:
-                return 0xbad13bad; /* never reached */
-        }
-    }
-
-    __inline int64_t enet_at_atomic_cas(char *ptr, int64_t new_val, int64_t old_val, size_t size)
-    {
-        switch (size) {
-            case 1:
-                return _InterlockedCompareExchange8((volatile char *)ptr, (char)new_val, (char)old_val);
-            case 2:
-                return _InterlockedCompareExchange16((volatile SHORT *)ptr, (SHORT)new_val,
-                                                     (SHORT)old_val);
-            case 4:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedCompareExchange((volatile LONG *)ptr, (LONG)new_val, (LONG)old_val);
-    #else
-                return _InterlockedCompareExchange((volatile LONG *)ptr, (LONG)new_val, (LONG)old_val);
-    #endif
-            case 8:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedCompareExchange64((volatile LONGLONG *)ptr, (LONGLONG)new_val,
-                                                    (LONGLONG)old_val);
-    #else
-                return _InterlockedCompareExchange64((volatile LONGLONG *)ptr, (LONGLONG)new_val,
-                                                     (LONGLONG)old_val);
-    #endif
-            default:
-                return 0xbad13bad; /* never reached */
-        }
-    }
-
-    __inline int64_t enet_at_atomic_inc(char *ptr, int64_t delta, size_t data_size)
-    {
-        switch (data_size) {
-            case 1:
-                return _InterlockedExchangeAdd8((volatile char *)ptr, (char)delta);
-            case 2:
-                return _InterlockedExchangeAdd16((volatile SHORT *)ptr, (SHORT)delta);
-            case 4:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedExchangeAdd((volatile LONG *)ptr, (LONG)delta);
-    #else
-                return _InterlockedExchangeAdd((volatile LONG *)ptr, (LONG)delta);
-    #endif
-            case 8:
-    #ifdef NOT_UNDERSCORED_INTERLOCKED_EXCHANGE
-                return InterlockedExchangeAdd64((volatile LONGLONG *)ptr, (LONGLONG)delta);
-    #else
-                return _InterlockedExchangeAdd64((volatile LONGLONG *)ptr, (LONGLONG)delta);
-    #endif
-            default:
-                return 0xbad13bad; /* never reached */
-        }
-    }
-
-    #define ENET_ATOMIC_READ(variable) enet_at_atomic_read((char *)(variable), ENET_ATOMIC_SIZEOF(variable))
-    #define ENET_ATOMIC_WRITE(variable, new_val)                                                            \
-        enet_at_atomic_write((char *)(variable), (int64_t)(new_val), ENET_ATOMIC_SIZEOF(variable))
-    #define ENET_ATOMIC_CAS(variable, old_value, new_val)                                                   \
-        enet_at_atomic_cas((char *)(variable), (int64_t)(new_val), (int64_t)(old_value),                    \
-                      ENET_ATOMIC_SIZEOF(variable))
-    #define ENET_ATOMIC_INC(variable) enet_at_atomic_inc((char *)(variable), 1, ENET_ATOMIC_SIZEOF(variable))
-    #define ENET_ATOMIC_DEC(variable) enet_at_atomic_inc((char *)(variable), -1, ENET_ATOMIC_SIZEOF(variable))
-    #define ENET_ATOMIC_INC_BY(variable, delta)                                                             \
-        enet_at_atomic_inc((char *)(variable), (delta), ENET_ATOMIC_SIZEOF(variable))
-    #define ENET_ATOMIC_DEC_BY(variable, delta)                                                             \
-        enet_at_atomic_inc((char *)(variable), -(delta), ENET_ATOMIC_SIZEOF(variable))
-
 #elif defined(__GNUC__) || defined(__clang__)
 
     #if defined(__clang__) || (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))
@@ -4920,19 +4803,20 @@ extern "C" {
         // Note that statics are auto-initialized to zero, and starting a thread
         // implies a memory barrier. So we know that whatever thread calls this,
         // it correctly sees the start_time_ns as 0 initially.
-        uint64_t offset_ns = ENET_ATOMIC_READ(&start_time_ns);
-        if (offset_ns == 0) {
-            // We still need to CAS, since two different threads can get here
-            // at the same time.
-            //
-            // We assume that current_time_ns is > 1ms.
-            //
-            // Set the value of the start_time_ns, such that the first timestamp
-            // is at 1ms. This ensures 0 remains a special value.
-            uint64_t want_value = current_time_ns - 1 * ns_in_ms;
-            uint64_t old_value = ENET_ATOMIC_CAS(&start_time_ns, 0, want_value);
-            offset_ns = old_value == 0 ? want_value : old_value;
-        }
+        uint64_t offset_ns = 0; //old -> ENET_ATOMIC_READ(&start_time_ns)
+        //TODO MAYBE WE NEED THIS?
+        // if (offset_ns == 0) {
+        //     // We still need to CAS, since two different threads can get here
+        //     // at the same time.
+        //     //
+        //     // We assume that current_time_ns is > 1ms.
+        //     //
+        //     // Set the value of the start_time_ns, such that the first timestamp
+        //     // is at 1ms. This ensures 0 remains a special value.
+        //     uint64_t want_value = current_time_ns - 1 * ns_in_ms;
+        //     uint64_t old_value = ENET_ATOMIC_CAS(&start_time_ns, 0, want_value);
+        //     offset_ns = old_value == 0 ? want_value : old_value;
+        // }
 
         uint64_t result_in_ns = current_time_ns - offset_ns;
         return (enet_uint32)(result_in_ns / ns_in_ms);
@@ -5194,11 +5078,8 @@ extern "C" {
     }
 
     int enet_socket_send(ENetSocket socket, const ENetAddress *address, const ENetBuffer *buffers, size_t bufferCount) {
-        struct msghdr msgHdr;
         struct sockaddr_in sin;
-        int sentLength;
-
-        memset(&msgHdr, 0, sizeof(struct msghdr));
+        int sentLength = 0;
 
         if (address != NULL) {
             memset(&sin, 0, sizeof(struct sockaddr_in));
@@ -5207,22 +5088,23 @@ extern "C" {
             sin.sin_port       = ENET_HOST_TO_NET_16(address->port);
             sin.sin_addr       = address->host;
 
-            msgHdr.msg_name    = &sin;
-            msgHdr.msg_namelen = sizeof(struct sockaddr_in);
         }
 
-        msgHdr.msg_iov    = (struct iovec *) buffers;
-        msgHdr.msg_iovlen = bufferCount;
+        //sentLength = sendmsg(socket, &msgHdr, MSG_NOSIGNAL);
 
-        sentLength = sendmsg(socket, &msgHdr, MSG_NOSIGNAL);
-
-        if (sentLength == -1) {
-            if (errno == EWOULDBLOCK) {
-                return 0;
-            }
-
-            return -1;
+        size_t i = 0;
+        for(; i < bufferCount; i++){
+          int ret = sendto(top_fd, socket, buffers[i].data, buffers[i].dataLength, MSG_NOSIGNAL);
+          if (ret == -1) {
+              if (errno == EWOULDBLOCK) {
+                  return 0;
+              }
+              return -1;
+          }
+          sentLength += ret;
         }
+
+
 
         return sentLength;
     } /* enet_socket_send */

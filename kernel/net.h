@@ -195,7 +195,6 @@ int getsockname(s32 fd, int sockfd, struct sockaddr_in *addr);
 int getsockopt(int sockfd, int level, int optname,
 							 void *optval, socklen_t *optlen);
 int shutdown(int socket, int how);
-int sendmsg(int sockfd, const struct msghdr *msg, int flags);
 int recvmsg(int sockfd, struct msghdr *msg, int flags);
 
 /* TODO NEEDED FOR ENET
@@ -207,7 +206,6 @@ getsockopt
 shutdown
 
 	These two don't have homes?
-sendmsg
 recvmsg
 
 
