@@ -14,6 +14,8 @@
 #define IPPROTO_TCP  6
 #define TCP_NODELAY  0x2001	   /* don't delay send to coalesce packets */
 
+typedef u32 socklen_t;
+
 /* From marcan - see git://git.bootmii.org/var/git/mini.git
  * Looks like this is also used in libogc code */
 
@@ -94,6 +96,28 @@ struct sendto_params {
 	//struct address addr;
 };
 
+struct addrinfo {
+		int              ai_flags;     // AI_PASSIVE, AI_CANONNAME, etc.
+		int              ai_family;    // AF_INET, AF_INET, AF_UNSPEC
+		int              ai_socktype;  // SOCK_STREAM, SOCK_DGRAM
+		int              ai_protocol;  // use 0 for "any"
+		size_t           ai_addrlen;   // size of ai_addr in bytes
+		struct sockaddr *ai_addr;      // struct sockaddr_in or _in6
+		char            *ai_canonname; // full canonical hostname
+
+		struct addrinfo *ai_next;      // linked list, next node
+};
+
+struct msghdr {
+ char *msg_name;		/* optional address */
+ int	msg_namelen;		/* size of address */
+ struct	iovec *msg_iov;		/* scatter/gather array */
+ int	msg_iovlen;		/* # elements in msg_iov */
+ char	*msg_accrights;		/* access rights sent/received */
+ int	msg_accrightslen;
+ int msg_flags;         /* flags on received message */
+};
+
 /* These IOCTL definitions are from `libogc/network_wii.c`, and are also
  * in Dolphin (I think?) */
 
@@ -157,6 +181,22 @@ s32 connect(s32 fd, s32 socket, struct sockaddr_in *name);
 s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags);
 s32 setsockopt(s32 fd, s32 socket, u32 level, u32 optname, void *optval, u32 optlen);
 s32 poll(s32 fd, struct pollsd *sds, s32 nsds, s32 timeout);
+
+// TODO THESE DONT WORK YET
+int getaddrinfo(const char *node, const char *service,
+	               const struct addrinfo *hints,
+	               struct addrinfo **res);
+int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+                 char *host, socklen_t hostlen,
+                 char *serv, socklen_t servlen, int flags);
+
+
+int getsockname(s32 fd, int sockfd, struct sockaddr_in *addr);
+int getsockopt(int sockfd, int level, int optname,
+							 void *optval, socklen_t *optlen);
+int shutdown(int socket, int how);
+int sendmsg(int sockfd, const struct msghdr *msg, int flags);
+int recvmsg(int sockfd, struct msghdr *msg, int flags);
 
 /* TODO NEEDED FOR ENET
 

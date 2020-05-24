@@ -354,3 +354,43 @@ s32 poll(s32 fd, struct pollsd *sds, s32 nsds, s32 timeout)
 	heap_free(0, psds);
 	return res;
 }
+
+int getaddrinfo(const char *node, const char *service,
+                       const struct addrinfo *hints,
+                       struct addrinfo **res)
+{
+ 	return 0;
+}
+
+int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+                 char *host, socklen_t hostlen,
+                 char *serv, socklen_t servlen, int flags)
+{
+	return 0;
+}
+
+int getsockname(s32 fd, int sockfd, struct sockaddr_in *addr)
+{
+	return 0;
+}
+
+int getsockopt(int sockfd, int level, int optname,
+							 void *optval, socklen_t *optlen)
+{
+	return 0;
+}
+
+int shutdown(int socket, int how)
+{
+	return 0;
+}
+
+int sendmsg(int sockfd, const struct msghdr *msg, int flags)
+{
+	return 0;
+}
+
+int recvmsg(int sockfd, struct msghdr *msg, int flags)
+{
+	return 0;
+}

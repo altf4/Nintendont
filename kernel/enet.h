@@ -110,12 +110,6 @@
     #include <errno.h>
     #include <fcntl.h>
 
-    #ifdef __APPLE__
-    #include <mach/clock.h>
-    #include <mach/mach.h>
-    #include <Availability.h>
-    #endif
-
     #ifndef MSG_NOSIGNAL
     #define MSG_NOSIGNAL 0
     #endif
@@ -178,22 +172,11 @@ extern "C" {
     typedef uint16_t enet_uint16;   /**< unsigned 16-bit type */
     typedef uint32_t enet_uint32;   /**< unsigned 32-bit type */
     typedef uint64_t enet_uint64;   /**< unsigned 64-bit type */
-    typedef uint32_t socklen_t;
     // struct sockaddr {
     //     unsigned short    sa_family;    // address family, AF_xxx
     //     char              sa_data[14];  // 14 bytes of protocol address
     // };
-    struct addrinfo {
-        int              ai_flags;     // AI_PASSIVE, AI_CANONNAME, etc.
-        int              ai_family;    // AF_INET, AF_INET, AF_UNSPEC
-        int              ai_socktype;  // SOCK_STREAM, SOCK_DGRAM
-        int              ai_protocol;  // use 0 for "any"
-        size_t           ai_addrlen;   // size of ai_addr in bytes
-        struct sockaddr *ai_addr;      // struct sockaddr_in or _in6
-        char            *ai_canonname; // full canonical hostname
 
-        struct addrinfo *ai_next;      // linked list, next node
-    };
 
     typedef enet_uint32 ENetVersion;
 
@@ -315,16 +298,6 @@ extern "C" {
     //     struct in6_addr sin_addr;     /* IPv6 address */
     //     uint32_t        sin_scope_id; /* Scope ID (new in 2.4) */
     // };
-
-     struct msghdr {
-    	caddr_t	msg_name;		/* optional address */
-    	int	msg_namelen;		/* size of address */
-    	struct	iovec *msg_iov;		/* scatter/gather array */
-    	int	msg_iovlen;		/* # elements in msg_iov */
-    	caddr_t	msg_accrights;		/* access rights sent/received */
-    	int	msg_accrightslen;
-      int msg_flags;         /* flags on received message */
-    };
 
     struct pollfd {
       int   fd;         /* file descriptor */
@@ -5083,9 +5056,7 @@ extern "C" {
 
     int enet_socket_get_address(ENetSocket socket, ENetAddress *address) {
         struct sockaddr_in sin;
-        socklen_t sinLength = sizeof(struct sockaddr_in);
-
-        if (getsockname(socket, (struct sockaddr *) &sin, &sinLength) == -1) {
+        if (getsockname(top_fd, socket, (struct sockaddr_in *) &sin) == -1) {
             return -1;
         }
 
@@ -5234,7 +5205,7 @@ extern "C" {
             sin.sin_port       = ENET_HOST_TO_NET_16(address->port);
             sin.sin_addr       = address->host;
 
-            msgHdr.msg_name    = (caddr_t)&sin;
+            msgHdr.msg_name    = &sin;
             msgHdr.msg_namelen = sizeof(struct sockaddr_in);
         }
 
