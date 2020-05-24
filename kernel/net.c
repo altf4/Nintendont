@@ -381,7 +381,7 @@ struct sockaddr_in getServerIP()
 	memset(&address, '\0', sizeof(address));
 
 	address.sin_family = AF_INET;
-	address.sin_port = 51441;
+	address.sin_port = SERVER_PORT;
 	address.sin_addr.s_addr = current_ip_address;
 
 	return address;

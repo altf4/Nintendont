@@ -14,6 +14,8 @@
 #define IPPROTO_TCP  6
 #define TCP_NODELAY  0x2001	   /* don't delay send to coalesce packets */
 
+#define SERVER_PORT	51441
+
 typedef u32 socklen_t;
 
 /* From marcan - see git://git.bootmii.org/var/git/mini.git
