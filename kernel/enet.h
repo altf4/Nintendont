@@ -4902,7 +4902,7 @@ extern "C" {
 
         struct timespec ts;
         ts.tv_sec = GetCurrentTime();
-        ts.tv_nsec = 0;
+        ts.tv_nsec = TicksToMs(read32(HW_TIMER));
     // #if defined(CLOCK_MONOTONIC_RAW)
     //     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     // #else
