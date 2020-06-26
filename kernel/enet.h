@@ -5182,6 +5182,7 @@ extern "C" {
         if (address != NULL) {
             memset(&sin, 0, sizeof(struct sockaddr_in));
 
+            sin.sin_len        = 8;
             sin.sin_family     = AF_INET;
             sin.sin_port       = ENET_HOST_TO_NET_16(address->port);
             sin.sin_addr       = address->host;
@@ -5195,6 +5196,8 @@ extern "C" {
         size_t i = 0;
         for(; i < bufferCount; i++){
           int ret = sendto(top_fd, socket, buffers[i].data, buffers[i].dataLength, MSG_NOSIGNAL, &sin);
+          dbgprintf ("NETWORKING: Send ret val %d  \n", ret);
+
           if (ret == -1) {
               if (errno == EWOULDBLOCK) {
                   return 0;

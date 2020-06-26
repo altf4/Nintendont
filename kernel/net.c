@@ -242,7 +242,7 @@ s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags, struct sockaddr_i
 		params->has_destaddr = 0;
 	} else{
 		params->has_destaddr = 1;
-		memcpy(params->destaddr, to, sizeof(struct sockaddr_in));
+		memcpy(params->destaddr, to, to->sin_len);
 	}
 	vec[0].data = message_buf;
 	vec[0].len = len;
