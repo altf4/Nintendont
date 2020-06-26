@@ -214,7 +214,7 @@ s32 accept(s32 fd, s32 socket, struct sockaddr_in *addr)
 /* sendto()
  * Emit a message on some socket.
  */
-s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags)
+s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags, struct sockaddr_in *to)
 {
 	s32 res;
 	STACK_ALIGN(struct sendto_params, params, 1, 32);
@@ -237,9 +237,13 @@ s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags)
 
 	params->socket = socket;
 	params->flags = flags;
-	params->has_destaddr = 0; // ?
-	//memcpy(params->destaddr, to, to->sa_len);
 
+	if(to == NULL){
+		params->has_destaddr = 0;
+	} else{
+		params->has_destaddr = 0;
+		memcpy(params->destaddr, to, 0);
+	}
 	vec[0].data = message_buf;
 	vec[0].len = len;
 	vec[1].data = params;
@@ -256,7 +260,7 @@ s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags)
 /* recvfrom()
  * Recieve a message on some socket.
  */
-s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags)
+s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags, struct sockaddr_in *from)
 {
 	s32 res;
 	//u8* message_buf = NULL;
@@ -273,10 +277,13 @@ s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags)
 	vec[0].len = 8;
 	vec[1].data = mem;
 	vec[1].len = len;
-	vec[2].data = NULL;
-	vec[2].len = 0;
-
-	res = IOS_Ioctlv(fd, IOCTLV_SO_RECVFROM, 2, 0, vec);
+	vec[2].data = from;
+	if(from != NULL){
+		vec[2].len = sizeof(struct sockaddr);
+	} else {
+		vec[2].len = 0;
+	}
+	res = IOS_Ioctlv(fd, IOCTLV_SO_RECVFROM, 3, 0, vec);
 
 	return res;
 }
@@ -386,4 +393,16 @@ struct sockaddr_in getServerIP()
 
 	return address;
 
+}
+
+s32 ios_fcntl(s32 fd, s32 socket, u32 cmd, u32 flags)
+{
+	s32 ret;
+	STACK_ALIGN(u32, params, 3, 32);
+
+	params[0] = socket;
+	params[1] = cmd;
+	params[2] = flags;
+
+	ret = IOS_Ioctl(fd, IOCTL_SO_FCNTL, params, 12, NULL, 0);
 }

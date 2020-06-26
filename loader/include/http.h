@@ -30,4 +30,3 @@ bool http_post (const char *url, const u32 max_size, const char *postData);
 bool http_get_result (unsigned int *http_status, u8 **content, unsigned int *length);
 
 #endif
-

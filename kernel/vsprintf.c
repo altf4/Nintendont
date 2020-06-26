@@ -304,7 +304,7 @@ int _vsprintf(char *buf, const char *fmt, va_list args)
  * Emit a log message to some I/O device depending on the configuration.
  * Logging to a USB Gecko is ALWAYS enabled during the boot process.
  */
-extern u32 early_gecko_logging; 
+extern u32 early_gecko_logging;
 extern u32 slippi_use_port_a;
 int dbgprintf( const char *fmt, ...)
 {
@@ -316,7 +316,7 @@ int dbgprintf( const char *fmt, ...)
 	// Otherwise, regardless of HOW we're logging, we always need to call
 	// _vsprintf() to render our message into this buffer on the stack.
 
-	u32 num_bytes;	
+	u32 num_bytes;
 	va_list args;
 	char buffer[0x100];
 
@@ -329,19 +329,19 @@ int dbgprintf( const char *fmt, ...)
 
 	if (early_gecko_logging || slippi_use_port_a)
 	{
-		if ((*(vu32*)(0x0d800070) & 1) == 1) 
+		if ((*(vu32*)(0x0d800070) & 1) == 1)
 			svc_write(buffer);
 	}
 
-	// Regardless of whether or not we're using SD/EXI for logging, 
+	// Regardless of whether or not we're using SD/EXI for logging,
 	// conditionally compile in this code when SLIPPI_DEBUG is defined.
 	// Note that the call will spend extra time on-CPU blocking for this.
 	// A nicer solution would probably buffer up data and wait for another
 	// thread to send the message (if timing isn't especially critical).
 
 #ifdef SLIPPI_DEBUG
-	if ((top_fd > 0) && (debug_sock > 0)) 
-		sendto(top_fd, debug_sock, buffer, strlen(buffer), 0);
+	if ((top_fd > 0) && (debug_sock > 0))
+		sendto(top_fd, debug_sock, buffer, strlen(buffer), 0, NULL);
 #endif
 
 	// Deal with writes to SD card
@@ -363,7 +363,7 @@ int dbgprintf( const char *fmt, ...)
  */
 int sdhc_log_init()
 {
-	sdhc_log_status = f_open_main_drive(&sdhc_log, 
+	sdhc_log_status = f_open_main_drive(&sdhc_log,
 		"/slippi_ndebug.log", FA_OPEN_ALWAYS | FA_WRITE);
 
 	if (sdhc_log_status != FR_OK)
@@ -371,7 +371,7 @@ int sdhc_log_init()
 
 	// Write a header to the log file
 	u32 v = read32(0x3140);
-	dbgprintf("Nintendont IOS%d v%d.%d\r\n", 
+	dbgprintf("Nintendont IOS%d v%d.%d\r\n",
 		v >> 16, (v >> 8) & 0xff, v & 0xff);
 	dbgprintf("Built   : %s %s\r\n", __DATE__, __TIME__ );
 	dbgprintf("Version : %s\r\n", NIN_GIT_VERSION);
@@ -381,7 +381,7 @@ int sdhc_log_init()
 }
 
 /* sdhc_log_destroy()
- * Called during shutdown - closes the log file. 
+ * Called during shutdown - closes the log file.
  */
 void sdhc_log_destroy(void)
 {

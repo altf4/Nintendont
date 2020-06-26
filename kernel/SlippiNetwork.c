@@ -82,7 +82,7 @@ s32 SlippiNetworkInit()
 		SlippiNetworkHandlerThread,
 		((u32 *)&__slippi_network_stack_addr),
 		((u32)(&__slippi_network_stack_size)),
-		0x78);
+		0x978);
 	thread_continue(SlippiNetwork_Thread);
 	SlippiServerStarted = 1;
 
@@ -96,24 +96,24 @@ s32 SlippiNetworkInit()
  * return true. Otherwise, if the call times out (no message arrived), return
  * false. The caller is responsible for actually reading bytes off the socket.
  */
-bool waitForMessage(s32 socket, u32 timeout_ms)
-{
-	// Don't do anything if the socket is invalid
-	if (socket < 0) return 0;
-
-	STACK_ALIGN(struct pollsd, client_poll, 1, 32);
-	client_poll[0].socket = socket;
-	client_poll[0].events = POLLIN;
-
-	s32 res = poll(top_fd, client_poll, 1, timeout_ms);
-	dbgprintf("[Client Msg] Result: %d\r\n", res);
-
-	// TODO: How to handle potential errors here?
-	if (res < 0) dbgprintf("WARN: poll() returned %d\r\n", res);
-
-	if (client_poll[0].revents & POLLIN) return true;
-	else return false;
-}
+// bool waitForMessage(s32 socket, u32 timeout_ms)
+// {
+// 	// Don't do anything if the socket is invalid
+// 	if (socket < 0) return 0;
+//
+// 	STACK_ALIGN(struct pollsd, client_poll, 1, 32);
+// 	client_poll[0].socket = socket;
+// 	client_poll[0].events = POLLIN;
+//
+// 	s32 res = poll(top_fd, client_poll, 1, timeout_ms);
+// 	dbgprintf("[Client Msg] Result: %d\r\n", res);
+//
+// 	// TODO: How to handle potential errors here?
+// 	if (res < 0) dbgprintf("WARN: poll() returned %d\r\n", res);
+//
+// 	if (client_poll[0].revents & POLLIN) return true;
+// 	else return false;
+// }
 
 
 /* getClientMessage()
@@ -121,61 +121,61 @@ bool waitForMessage(s32 socket, u32 timeout_ms)
  * some 'socket'. Return the the size of the message we've received, otherwise
  * return '-1' if we've timed out (the client never sent a message).
  */
-static u8 clientMsg[CLIENT_MSG_BUF_SIZE];
-s32 getClientMessage(s32 socket, u32 waitTimeMs)
-{
-	u32 startTime = read32(HW_TIMER);
-	s32 pos = 0;
-
-	u32 msgSize = 0;
-
-	while (TimerDiffMs(startTime) < waitTimeMs)
-	{
-		bool hasData = waitForMessage(socket, 100);
-		if (!hasData) {
-			dbgprintf("[Client Msg] No data\r\n");
-			continue;
-		}
-
-		u32 readLen = 0;
-
-		// First we need to read the total message size
-		if (msgSize == 0) {
-			// Read message size into
-			readLen = recvfrom(top_fd, socket, &msgSize, 4, 0);
-			dbgprintf("[Recv Len] Res: %d | Val: %d\r\n", readLen, msgSize);
-			if (readLen != 4) {
-				// If first read does not contain the size, this is probably an error? It might be possible
-				// to get
-				return -2;
-			}
-		}
-
-		// Message is too long to read. Hang up on the other end
-		if(msgSize > CLIENT_MSG_BUF_SIZE) {
-			return -2;
-		}
-
-		readLen = recvfrom(top_fd, socket, &clientMsg[pos], msgSize - pos, 0);
-		dbgprintf("[Recv] Res: %d\r\n", readLen);
-
-		pos += readLen;
-
-		if (pos >= msgSize) {
-			// If pos is now equal to message size, we have finished reading the message
-
-			// Uncomment this to debug messages from client and also to determine where data
-			// is stored in the message
-			// int i;
-			// for (i = 0; i < msgSize; i++) {
-			// 	dbgprintf("[%i] %i | %x\r\n", i, clientMsg[i], clientMsg[i]);
-			// }
-
-			return pos;
-		}
-	}
-	return -1;
-}
+// static u8 clientMsg[CLIENT_MSG_BUF_SIZE];
+// s32 getClientMessage(s32 socket, u32 waitTimeMs)
+// {
+// 	u32 startTime = read32(HW_TIMER);
+// 	s32 pos = 0;
+//
+// 	u32 msgSize = 0;
+//
+// 	while (TimerDiffMs(startTime) < waitTimeMs)
+// 	{
+// 		bool hasData = waitForMessage(socket, 100);
+// 		if (!hasData) {
+// 			dbgprintf("[Client Msg] No data\r\n");
+// 			continue;
+// 		}
+//
+// 		u32 readLen = 0;
+//
+// 		// First we need to read the total message size
+// 		if (msgSize == 0) {
+// 			// Read message size into
+// 			readLen = recvfrom(top_fd, socket, &msgSize, 4, 0);
+// 			dbgprintf("[Recv Len] Res: %d | Val: %d\r\n", readLen, msgSize);
+// 			if (readLen != 4) {
+// 				// If first read does not contain the size, this is probably an error? It might be possible
+// 				// to get
+// 				return -2;
+// 			}
+// 		}
+//
+// 		// Message is too long to read. Hang up on the other end
+// 		if(msgSize > CLIENT_MSG_BUF_SIZE) {
+// 			return -2;
+// 		}
+//
+// 		readLen = recvfrom(top_fd, socket, &clientMsg[pos], msgSize - pos, 0);
+// 		dbgprintf("[Recv] Res: %d\r\n", readLen);
+//
+// 		pos += readLen;
+//
+// 		if (pos >= msgSize) {
+// 			// If pos is now equal to message size, we have finished reading the message
+//
+// 			// Uncomment this to debug messages from client and also to determine where data
+// 			// is stored in the message
+// 			// int i;
+// 			// for (i = 0; i < msgSize; i++) {
+// 			// 	dbgprintf("[%i] %i | %x\r\n", i, clientMsg[i], clientMsg[i]);
+// 			// }
+//
+// 			return pos;
+// 		}
+// 	}
+// 	return -1;
+// }
 
 
 /* generateToken()
@@ -198,45 +198,45 @@ u32 generateToken(u32 except)
  * Typically, we set 'client.socket' to -1 when a client doesn't exist, and
  * the 'server_socket' to -1 when the server isn't running.
  */
-int getConnectionStatus()
-{
-	if (server_sock < 0)
-		return CONN_STATUS_NO_SERVER;
-	if (client.socket < 0)
-		return CONN_STATUS_NO_CLIENT;
-	else if (client.socket >= 0)
-		return CONN_STATUS_CONNECTED;
-
-	return CONN_STATUS_UNKNOWN;
-}
+// int getConnectionStatus()
+// {
+// 	if (server_sock < 0)
+// 		return CONN_STATUS_NO_SERVER;
+// 	if (client.socket < 0)
+// 		return CONN_STATUS_NO_CLIENT;
+// 	else if (client.socket >= 0)
+// 		return CONN_STATUS_CONNECTED;
+//
+// 	return CONN_STATUS_UNKNOWN;
+// }
 
 
 /* killClient()
  * Close our connection with the current client.
  * Save some state if the client supports session management.
  */
-void killClient()
-{
-	dbgprintf("WARN: Client disconnected (socket %d, token=%08x)\r\n",
-			client.socket, client.token);
-	close(top_fd, client.socket);
-
-	// If this is a new client, save session when they disconnect
-	if (client.version == CLIENT_LATEST)
-	{
-		memcpy(&client_prev, &client, sizeof(struct SlippiClient));
-		dbgprintf("Saved cursor=0x%08x from session\r\n",
-				(u32)client.cursor);
-	}
-
-	client.socket = -1;
-	client.timestamp = 0;
-	client.cursor = 0;
-	client.version = 0;
-	client.token = 0;
-
-	reset_broadcast_timer();
-}
+// void killClient()
+// {
+// 	dbgprintf("WARN: Client disconnected (socket %d, token=%08x)\r\n",
+// 			client.socket, client.token);
+// 	close(top_fd, client.socket);
+//
+// 	// If this is a new client, save session when they disconnect
+// 	if (client.version == CLIENT_LATEST)
+// 	{
+// 		memcpy(&client_prev, &client, sizeof(struct SlippiClient));
+// 		dbgprintf("Saved cursor=0x%08x from session\r\n",
+// 				(u32)client.cursor);
+// 	}
+//
+// 	client.socket = -1;
+// 	client.timestamp = 0;
+// 	client.cursor = 0;
+// 	client.version = 0;
+// 	client.token = 0;
+//
+// 	reset_broadcast_timer();
+// }
 
 
 /* checkAlive()
@@ -244,30 +244,30 @@ void killClient()
  * sendto() here returns some error, this probably indicates that we can stop
  * talking to the current client and reset the socket.
  */
-s32 checkAlive(void)
-{
-	int status = getConnectionStatus();
-
-	// Do nothing if we aren't connected to a client
-	if (status != CONN_STATUS_CONNECTED)
-		return 0;
-
-	// Only check if we haven't detected any communication
-	if (TimerDiffMs(client.timestamp) < 500)
-		return 0;
-
-	// Send a keep alive message to the client
-	SlippiCommMsg keepAliveMsg = genKeepAliveMsg();
-	s32 res = sendto(top_fd, client.socket, keepAliveMsg.msg, keepAliveMsg.size, 0);
-
-	// Update timestamp on success, otherwise kill the current client
-	if (res == keepAliveMsg.size)
-		client.timestamp = read32(HW_TIMER);
-	else if (res <= 0)
-		killClient();
-
-	return 0;
-}
+// s32 checkAlive(void)
+// {
+// 	int status = getConnectionStatus();
+//
+// 	// Do nothing if we aren't connected to a client
+// 	if (status != CONN_STATUS_CONNECTED)
+// 		return 0;
+//
+// 	// Only check if we haven't detected any communication
+// 	if (TimerDiffMs(client.timestamp) < 500)
+// 		return 0;
+//
+// 	// Send a keep alive message to the client
+// 	SlippiCommMsg keepAliveMsg = genKeepAliveMsg();
+// 	s32 res = sendto(top_fd, client.socket, keepAliveMsg.msg, keepAliveMsg.size, 0);
+//
+// 	// Update timestamp on success, otherwise kill the current client
+// 	if (res == keepAliveMsg.size)
+// 		client.timestamp = read32(HW_TIMER);
+// 	else if (res <= 0)
+// 		killClient();
+//
+// 	return 0;
+// }
 
 
 /* startServer()
@@ -277,59 +277,59 @@ s32 checkAlive(void)
  *
  * TODO: Probably shut down the networking thread if we fail to initialize.
  */
-void stopServer() { close(top_fd, server_sock); server_sock = -1; }
-#define MAX_SERVER_RETRIES	10
-static int server_retries = 0;
-s32 startServer()
-{
-	s32 res;
-
-	// If things are broken, stop trying to initialize the server
-	if (server_retries >= MAX_SERVER_RETRIES)
-	{
-		// Maybe shutdown the network thread here?
-		if (server_retries == MAX_SERVER_RETRIES) {
-			dbgprintf("WARN: MAX_SERVER_RETRIES exceeded, giving up\r\n");
-			server_retries += 1;
-		}
-
-		return -1;
-	}
-
-	server_sock = socket(top_fd, AF_INET, SOCK_STREAM, IPPROTO_IP);
-	if (server_sock < 0)
-	{
-		dbgprintf("WARN: server socket returned %d\r\n", server_sock);
-		server_retries += 1;
-		server_sock = -1;
-
-		// Wait before trying again? Seems like if it fails on WiFi with -39 it would just continue
-		// failing anyway
-		mdelay(1000);
-
-		return server_sock;
-	}
-
-	res = bind(top_fd, server_sock, &server);
-	if (res < 0)
-	{
-		stopServer();
-		server_retries += 1;
-		dbgprintf("WARN: bind() failed with: %d\r\n", res);
-		return res;
-	}
-	res = listen(top_fd, server_sock, 1);
-	if (res < 0)
-	{
-		stopServer();
-		server_retries += 1;
-		dbgprintf("WARN: listen() failed with: %d\r\n", res);
-		return res;
-	}
-
-	server_retries = 0;
-	return server_sock;
-}
+// void stopServer() { close(top_fd, server_sock); server_sock = -1; }
+// #define MAX_SERVER_RETRIES	10
+// static int server_retries = 0;
+// s32 startServer()
+// {
+// 	s32 res;
+//
+// 	// If things are broken, stop trying to initialize the server
+// 	if (server_retries >= MAX_SERVER_RETRIES)
+// 	{
+// 		// Maybe shutdown the network thread here?
+// 		if (server_retries == MAX_SERVER_RETRIES) {
+// 			dbgprintf("WARN: MAX_SERVER_RETRIES exceeded, giving up\r\n");
+// 			server_retries += 1;
+// 		}
+//
+// 		return -1;
+// 	}
+//
+// 	server_sock = socket(top_fd, AF_INET, SOCK_STREAM, IPPROTO_IP);
+// 	if (server_sock < 0)
+// 	{
+// 		dbgprintf("WARN: server socket returned %d\r\n", server_sock);
+// 		server_retries += 1;
+// 		server_sock = -1;
+//
+// 		// Wait before trying again? Seems like if it fails on WiFi with -39 it would just continue
+// 		// failing anyway
+// 		mdelay(1000);
+//
+// 		return server_sock;
+// 	}
+//
+// 	res = bind(top_fd, server_sock, &server);
+// 	if (res < 0)
+// 	{
+// 		stopServer();
+// 		server_retries += 1;
+// 		dbgprintf("WARN: bind() failed with: %d\r\n", res);
+// 		return res;
+// 	}
+// 	res = listen(top_fd, server_sock, 1);
+// 	if (res < 0)
+// 	{
+// 		stopServer();
+// 		server_retries += 1;
+// 		dbgprintf("WARN: listen() failed with: %d\r\n", res);
+// 		return res;
+// 	}
+//
+// 	server_retries = 0;
+// 	return server_sock;
+// }
 
 u64 determineReadCursor(HandshakeClientPayload* payload, bool isFreshClient) {
 	u64 curWritePos = SlippiRestoreReadPos();
@@ -367,99 +367,99 @@ u64 determineReadCursor(HandshakeClientPayload* payload, bool isFreshClient) {
  *	  state for them (otherwise, create a new session)
  *	- Always rotate the token and return a new one to the client
  */
-bool createClient(s32 socket)
-{
-	s32 res;
-	int flags = 1;
-
-	dbgprintf("HSHK: Waiting ...\r\n");
-
-	// Wait for a handshake message from the client
-	s32 msgSize = getClientMessage(socket, HANDSHAKE_TIMEOUT_MS);
-	if (msgSize < 0)
-	{
-		dbgprintf("[Handshake] getClientMessage returned %d\r\n", msgSize);
-		dbgprintf("[Handshake] Timed out waiting for handshake\r\n", msgSize);
-		close(top_fd, socket);
-		return false;
-	}
-
-	ClientMsg msg = readClientMessage(clientMsg, msgSize);
-	if (msg.type != MSG_HANDSHAKE)
-	{
-		dbgprintf("[Handshake] Received non-handshake message from client, type: %d\r\n", msg.type);
-		close(top_fd, socket);
-		return false;
-	}
-
-	HandshakeClientPayload* payload = (HandshakeClientPayload*)msg.payload;
-
-	dbgprintf("[Handshake] Received cursor: %u\r\n", (u32)payload->cursor);
-	dbgprintf("[Handshake] Received instance token: %u\r\n", payload->clientToken);
-
-	u32 token = client_prev.token;
-	bool shouldGenToken = token != payload->clientToken || payload->clientToken == 0;
-	if (shouldGenToken) {
-		dbgprintf("Client has changed, generating new token.\r\n");
-		token = generateToken(token);
-	}
-
-	client.cursor = determineReadCursor(payload, shouldGenToken);
-	client.token = token;
-	client.socket = socket;
-	client.timestamp = read32(HW_TIMER);
-	client.version = CLIENT_LATEST;
-
-	// Clear potential overflow flag
-	overflowEncountered = false;
-
-	if (payload->isRealtime) {
-		// If realtime mode, turn off nagle's algorithm
-		dbgprintf("Realtime mode is on, turning off nagle's algorithm...\r\n");
-		setsockopt(top_fd, client.socket, IPPROTO_TCP, TCP_NODELAY, (void*)&flags, sizeof(flags));
-	}
-
-	dbgprintf("Sending token: %u\r\n", client.token);
-
-	// Send a handshake response back to the client
-	SlippiCommMsg handshakeMsg = genHandshakeMsg(client.token, client.cursor);
-	res = sendto(top_fd, client.socket, handshakeMsg.msg, handshakeMsg.size, 0);
-	if (res < 0) {
-		dbgprintf("Failed to send handshake response. %d\r\n", res);
-	}
-
-	return true;
-}
+// bool createClient(s32 socket)
+// {
+// 	s32 res;
+// 	int flags = 1;
+//
+// 	dbgprintf("HSHK: Waiting ...\r\n");
+//
+// 	// Wait for a handshake message from the client
+// 	s32 msgSize = getClientMessage(socket, HANDSHAKE_TIMEOUT_MS);
+// 	if (msgSize < 0)
+// 	{
+// 		dbgprintf("[Handshake] getClientMessage returned %d\r\n", msgSize);
+// 		dbgprintf("[Handshake] Timed out waiting for handshake\r\n", msgSize);
+// 		close(top_fd, socket);
+// 		return false;
+// 	}
+//
+// 	ClientMsg msg = readClientMessage(clientMsg, msgSize);
+// 	if (msg.type != MSG_HANDSHAKE)
+// 	{
+// 		dbgprintf("[Handshake] Received non-handshake message from client, type: %d\r\n", msg.type);
+// 		close(top_fd, socket);
+// 		return false;
+// 	}
+//
+// 	HandshakeClientPayload* payload = (HandshakeClientPayload*)msg.payload;
+//
+// 	dbgprintf("[Handshake] Received cursor: %u\r\n", (u32)payload->cursor);
+// 	dbgprintf("[Handshake] Received instance token: %u\r\n", payload->clientToken);
+//
+// 	u32 token = client_prev.token;
+// 	bool shouldGenToken = token != payload->clientToken || payload->clientToken == 0;
+// 	if (shouldGenToken) {
+// 		dbgprintf("Client has changed, generating new token.\r\n");
+// 		token = generateToken(token);
+// 	}
+//
+// 	client.cursor = determineReadCursor(payload, shouldGenToken);
+// 	client.token = token;
+// 	client.socket = socket;
+// 	client.timestamp = read32(HW_TIMER);
+// 	client.version = CLIENT_LATEST;
+//
+// 	// Clear potential overflow flag
+// 	overflowEncountered = false;
+//
+// 	if (payload->isRealtime) {
+// 		// If realtime mode, turn off nagle's algorithm
+// 		dbgprintf("Realtime mode is on, turning off nagle's algorithm...\r\n");
+// 		setsockopt(top_fd, client.socket, IPPROTO_TCP, TCP_NODELAY, (void*)&flags, sizeof(flags));
+// 	}
+//
+// 	dbgprintf("Sending token: %u\r\n", client.token);
+//
+// 	// Send a handshake response back to the client
+// 	SlippiCommMsg handshakeMsg = genHandshakeMsg(client.token, client.cursor);
+// 	res = sendto(top_fd, client.socket, handshakeMsg.msg, handshakeMsg.size, 0);
+// 	if (res < 0) {
+// 		dbgprintf("Failed to send handshake response. %d\r\n", res);
+// 	}
+//
+// 	return true;
+// }
 
 /* listenForClient()
  * If no remote host is connected, block until a client to connects to the
  * server. Potentially do some handshake to negotiate things with a client.
  * Then, fill out a new entry for the client state/session.
  */
-void listenForClient()
-{
-	// We already have an active client
-	if (client.socket >= 0)
-		return;
-
-	// Block here until we accept a new client connection
-	STACK_ALIGN(struct sockaddr_in, addr, 1, 32);
-	addr->sin_len = 8;
-	addr->sin_family = AF_INET;
-	s32 socket = accept(top_fd, server_sock, addr);
-
-	// If the socket isn't valid, accept() returned some error
-	if (socket < 0)
-	{
-		dbgprintf("WARN: accept returned %d, server restart\r\n", socket);
-		stopServer();
-		return;
-	}
-
-	// Actually create a new client
-	dbgprintf("Detected connection, creating client ...\r\n");
-	createClient(socket);
-}
+// void listenForClient()
+// {
+// 	// We already have an active client
+// 	if (client.socket >= 0)
+// 		return;
+//
+// 	// Block here until we accept a new client connection
+// 	STACK_ALIGN(struct sockaddr_in, addr, 1, 32);
+// 	addr->sin_len = 8;
+// 	addr->sin_family = AF_INET;
+// 	s32 socket = accept(top_fd, server_sock, addr);
+//
+// 	// If the socket isn't valid, accept() returned some error
+// 	if (socket < 0)
+// 	{
+// 		dbgprintf("WARN: accept returned %d, server restart\r\n", socket);
+// 		stopServer();
+// 		return;
+// 	}
+//
+// 	// Actually create a new client
+// 	dbgprintf("Detected connection, creating client ...\r\n");
+// 	createClient(socket);
+// }
 
 /* handleFileTransfer()
  * Deal with sending Slippi data over the network:
@@ -469,63 +469,63 @@ void listenForClient()
  *	3. If sendto() isn't successful, hang up on a client
  *	4. Update our read cursor in Slippi buffer
  */
-static u8 readBuf[READ_BUF_SIZE];
-static SlpGameReader reader;
-s32 handleFileTransfer()
-{
-	// Do nothing if we aren't connected to a client
-	int status = getConnectionStatus();
-	if (status != CONN_STATUS_CONNECTED)
-		return 0;
-
-	// Read some bytes into the local buffer
-	SlpMemError err = SlippiMemoryRead(&reader, readBuf, READ_BUF_SIZE, client.cursor);
-	if (err)
-	{
-		// On an overflow read, reset to the write cursor
-		if (err == SLP_READ_OVERFLOW)
-		{
-			overflowEncountered = true;
-			client.cursor = SlippiRestoreReadPos();
-			dbgprintf("WARN: Overflow read error detected. Reset to: %X\r\n", client.cursor);
-		}
-		mdelay(1000);
-		// For specific errors, bytes will still be read. Not returning to deal with those
-	}
-
-	// If there's no new data to send, just return
-	if (reader.lastReadResult.bytesRead == 0)
-		return 0;
-
-	// Actually send data to the client
-	SlippiCommMsg replayMsg = genReplayMsg(
-		readBuf, reader.lastReadResult.bytesRead, client.cursor,
-		client.cursor + reader.lastReadResult.bytesRead, overflowEncountered
-	);
-	s32 res = sendto(top_fd, client.socket, replayMsg.msg, replayMsg.size, 0);
-
-	// If sendto() returns < 0, the client has disconnected
-	if (res < 0)
-	{
-		dbgprintf("[SENDTO FAIL] Bytes read: %d | Last frame %d\r\n", reader.lastReadResult.bytesRead, reader.metadata.lastFrame);
-		killClient();
-		return res;
-	}
-
-	// static u32 maxBufUsage = 0;
-	// if (reader.lastReadResult.bytesRead >= maxBufUsage) {
-	// 	dbgprintf("[NEW BUF USAGE MAX] Old: %d, New: %d\r\n", maxBufUsage, reader.lastReadResult.bytesRead);
-	// 	maxBufUsage = reader.lastReadResult.bytesRead;
-	// }
-	// dbgprintf("Bytes read: %d | Last frame %d\r\n", reader.lastReadResult.bytesRead, reader.metadata.lastFrame);
-
-	// When we successfully transmit, update the client's cursor
-	client.timestamp = read32(HW_TIMER);
-	client.cursor += reader.lastReadResult.bytesRead;
-	overflowEncountered = false;
-
-	return 0;
-}
+// static u8 readBuf[READ_BUF_SIZE];
+// static SlpGameReader reader;
+// s32 handleFileTransfer()
+// {
+// 	// Do nothing if we aren't connected to a client
+// 	int status = getConnectionStatus();
+// 	if (status != CONN_STATUS_CONNECTED)
+// 		return 0;
+//
+// 	// Read some bytes into the local buffer
+// 	SlpMemError err = SlippiMemoryRead(&reader, readBuf, READ_BUF_SIZE, client.cursor);
+// 	if (err)
+// 	{
+// 		// On an overflow read, reset to the write cursor
+// 		if (err == SLP_READ_OVERFLOW)
+// 		{
+// 			overflowEncountered = true;
+// 			client.cursor = SlippiRestoreReadPos();
+// 			dbgprintf("WARN: Overflow read error detected. Reset to: %X\r\n", client.cursor);
+// 		}
+// 		mdelay(1000);
+// 		// For specific errors, bytes will still be read. Not returning to deal with those
+// 	}
+//
+// 	// If there's no new data to send, just return
+// 	if (reader.lastReadResult.bytesRead == 0)
+// 		return 0;
+//
+// 	// Actually send data to the client
+// 	SlippiCommMsg replayMsg = genReplayMsg(
+// 		readBuf, reader.lastReadResult.bytesRead, client.cursor,
+// 		client.cursor + reader.lastReadResult.bytesRead, overflowEncountered
+// 	);
+// 	s32 res = sendto(top_fd, client.socket, replayMsg.msg, replayMsg.size, 0);
+//
+// 	// If sendto() returns < 0, the client has disconnected
+// 	if (res < 0)
+// 	{
+// 		dbgprintf("[SENDTO FAIL] Bytes read: %d | Last frame %d\r\n", reader.lastReadResult.bytesRead, reader.metadata.lastFrame);
+// 		killClient();
+// 		return res;
+// 	}
+//
+// 	// static u32 maxBufUsage = 0;
+// 	// if (reader.lastReadResult.bytesRead >= maxBufUsage) {
+// 	// 	dbgprintf("[NEW BUF USAGE MAX] Old: %d, New: %d\r\n", maxBufUsage, reader.lastReadResult.bytesRead);
+// 	// 	maxBufUsage = reader.lastReadResult.bytesRead;
+// 	// }
+// 	// dbgprintf("Bytes read: %d | Last frame %d\r\n", reader.lastReadResult.bytesRead, reader.metadata.lastFrame);
+//
+// 	// When we successfully transmit, update the client's cursor
+// 	client.timestamp = read32(HW_TIMER);
+// 	client.cursor += reader.lastReadResult.bytesRead;
+// 	overflowEncountered = false;
+//
+// 	return 0;
+// }
 
 
 /* SlippiNetworkHandlerThread()
@@ -545,20 +545,25 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 	/* A specific host address can be specified by   */
 	/* enet_address_set_host (& address, "x.x.x.x"); */
 	address.host = ENET_HOST_ANY;
-	/* Bind the server to port 1234. */
+	/* Bind the server to port 51441. */
 	address.port = SERVER_PORT;
 	server = enet_host_create (& address /* the address to bind the server host to */,
 															 32      /* allow up to 32 clients and/or outgoing connections */,
-																2      /* allow up to 2 channels to be used, 0 and 1 */,
+																3      /* allow up to 3 channels to be used */,
 																0      /* assume any amount of incoming bandwidth */,
 																0      /* assume any amount of outgoing bandwidth */);
 	while (1)
 	{
-		dbgprintf ("NETWORKING: ENet Loop.                        :)\n");
 		ENetEvent event;
+
 		/* Wait up to 1000 milliseconds for an event. */
+		dbgprintf ("NETWORKING: Starting ENet Loop.                         \n");
+
 		while (enet_host_service (server, & event, 1000) > 0)
 		{
+				u32 time = enet_time_get();
+				dbgprintf ("NETWORKING: ENet Loop.       %X                 :)\n", time);
+
 				switch (event.type)
 				{
 				case ENET_EVENT_TYPE_CONNECT:
@@ -576,9 +581,7 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 										event.channelID);
 						/* Clean up the packet now that we're done using it. */
 						enet_packet_destroy (event.packet);
-
 						break;
-
 				case ENET_EVENT_TYPE_DISCONNECT:
 						dbgprintf ("%s disconnected.\n", event.peer -> data);
 						/* Reset the peer's client information. */
@@ -590,7 +593,7 @@ static u32 SlippiNetworkHandlerThread(void *arg)
 				}
 		}
 
-		mdelay(THREAD_CYCLE_TIME_MS * 250);
+		// mdelay(THREAD_CYCLE_TIME_MS * 100);
 	}
 
 	return 0;

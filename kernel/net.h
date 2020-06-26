@@ -52,6 +52,8 @@ union ullc {
 #define POLLHUP				0x0010
 #define POLLNVAL			0x0020
 
+#define IOS_O_NONBLOCK				0x04
+
 struct setsockopt_params {
 	u32 socket;
 	u32 level;
@@ -178,11 +180,12 @@ s32 close(s32 fd, s32 socket);
 s32 bind(s32 fd, s32 socket, struct sockaddr_in *name);
 s32 listen(s32 fd, s32 socket, u32 backlog);
 s32 accept(s32 fd, s32 socket, struct sockaddr_in *addr);
-s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags);
+s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags, struct sockaddr_in *to);
 s32 connect(s32 fd, s32 socket, struct sockaddr_in *name);
-s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags);
+s32 recvfrom(s32 fd, s32 socket, void *mem, s32 len, u32 flags, struct sockaddr_in *from);
 s32 setsockopt(s32 fd, s32 socket, u32 level, u32 optname, void *optval, u32 optlen);
 s32 poll(s32 fd, struct pollsd *sds, s32 nsds, s32 timeout);
+s32 ios_fcntl(s32 fd, s32 socket, u32 cmd, u32 flags);
 
 // TODO THESE DONT WORK YET
 int getaddrinfo(const char *node, const char *service,
@@ -195,12 +198,5 @@ int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 int shutdown(s32 fd, int socket, int how);
 
 struct sockaddr_in getServerIP();
-
-/* TODO NEEDED FOR ENET
-
-getaddrinfo
-getnameinfo
-
-*/
 
 #endif

@@ -1658,6 +1658,7 @@ extern "C" {
 
         channelCount = ENET_NET_TO_HOST_32(command->connect.channelCount);
 
+        dbgprintf ("NETWORKING: In the connect command!!!! channelCount: %d      \n", channelCount);
         if (channelCount < ENET_PROTOCOL_MINIMUM_CHANNEL_COUNT || channelCount > ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT) {
             return NULL;
         }
@@ -1677,6 +1678,8 @@ extern "C" {
         }
 
         if (peer == NULL || duplicatePeers >= host->duplicatePeers) {
+            dbgprintf ("NETWORKING: Weird error\n");
+
             return NULL;
         }
 
@@ -1698,6 +1701,9 @@ extern "C" {
         peer->packetThrottleAcceleration = ENET_NET_TO_HOST_32(command->connect.packetThrottleAcceleration);
         peer->packetThrottleDeceleration = ENET_NET_TO_HOST_32(command->connect.packetThrottleDeceleration);
         peer->eventData                  = ENET_NET_TO_HOST_32(command->connect.data);
+
+        dbgprintf ("NETWORKING: peer info. outgoingPeerID: \n", peer->outgoingPeerID);
+
 
         incomingSessionID = command->connect.incomingSessionID == 0xFF ? peer->outgoingSessionID : command->connect.incomingSessionID;
         incomingSessionID = (incomingSessionID + 1) & (ENET_PROTOCOL_HEADER_SESSION_MASK >> ENET_PROTOCOL_HEADER_SESSION_SHIFT);
@@ -1782,6 +1788,8 @@ extern "C" {
         verifyCommand.verifyConnect.packetThrottleAcceleration  = ENET_HOST_TO_NET_32(peer->packetThrottleAcceleration);
         verifyCommand.verifyConnect.packetThrottleDeceleration  = ENET_HOST_TO_NET_32(peer->packetThrottleDeceleration);
         verifyCommand.verifyConnect.connectID                   = peer->connectID;
+
+        dbgprintf ("NETWORKING: queue outgoing verify command! \n");
 
         enet_peer_queue_outgoing_command(peer, &verifyCommand, NULL, 0, 0);
         return peer;
@@ -2338,6 +2346,8 @@ extern "C" {
         enet_uint8 sessionID;
 
         if (host->receivedDataLength < (size_t) &((ENetProtocolHeader *) 0)->sentTime) {
+            dbgprintf ("NETWORKING: Early exit peerID: %d,         \n", (size_t) &((ENetProtocolHeader *) 0)->sentTime);
+
             return 0;
         }
 
@@ -2348,6 +2358,8 @@ extern "C" {
         flags     = peerID & ENET_PROTOCOL_HEADER_FLAG_MASK;
         peerID   &= ~(ENET_PROTOCOL_HEADER_FLAG_MASK | ENET_PROTOCOL_HEADER_SESSION_MASK);
 
+        dbgprintf ("NETWORKING: Got peerID: %d,         \n", peerID);
+
         headerSize = (flags & ENET_PROTOCOL_HEADER_FLAG_SENT_TIME ? sizeof(ENetProtocolHeader) : (size_t) &((ENetProtocolHeader *) 0)->sentTime);
         if (host->checksum != NULL) {
             headerSize += sizeof(enet_uint32);
@@ -2356,6 +2368,8 @@ extern "C" {
         if (peerID == ENET_PROTOCOL_MAXIMUM_PEER_ID) {
             peer = NULL;
         } else if (peerID >= host->peerCount) {
+            dbgprintf ("NETWORKING: exit Peer count: %d,         \n", host->peerCount);
+
             return 0;
         } else {
             peer = &host->peers[peerID];
@@ -2368,6 +2382,8 @@ extern "C" {
                 (peer->outgoingPeerID < ENET_PROTOCOL_MAXIMUM_PEER_ID &&
                 sessionID != peer->incomingSessionID)
             ) {
+                dbgprintf ("NETWORKING: exit sessionID: %d,         \n", sessionID);
+
                 return 0;
             }
         }
@@ -2429,6 +2445,8 @@ extern "C" {
             }
 
             commandNumber = command->header.command & ENET_PROTOCOL_COMMAND_MASK;
+            dbgprintf ("NETWORKING: commandNumber: %d,         \n", commandNumber);
+
             if (commandNumber >= ENET_PROTOCOL_COMMAND_COUNT) {
                 break;
             }
@@ -2454,11 +2472,15 @@ extern "C" {
                     break;
 
                 case ENET_PROTOCOL_COMMAND_CONNECT:
+                    dbgprintf ("NETWORKING: Trying to connect!: command: %d, peer: %X  \n", commandNumber, peer);
+
                     if (peer != NULL) {
                         goto commandError;
                     }
                     peer = enet_protocol_handle_connect(host, header, command);
+                    dbgprintf ("NETWORKING: Finished CONNECT peer: %X  \n", peer);
                     if (peer == NULL) {
+                        dbgprintf ("NETWORKING: exit OKAY  \n");
                         goto commandError;
                     }
                     break;
@@ -2567,6 +2589,7 @@ extern "C" {
     static int enet_protocol_receive_incoming_commands(ENetHost *host, ENetEvent *event) {
         int packets;
 
+        // dbgprintf ("NETWORKING: Inside incoming commands        \n");
         for (packets = 0; packets < 256; ++packets) {
             int receivedLength;
             ENetBuffer buffer;
@@ -2575,12 +2598,16 @@ extern "C" {
             // buffer.dataLength = sizeof (host->packetData[0]);
             buffer.dataLength = host->mtu;
 
+            // dbgprintf ("NETWORKING: Socket receive        \n");
             receivedLength    = enet_socket_receive(host->socket, &host->receivedAddress, &buffer, 1);
+            // dbgprintf ("NETWORKING: Finished Socket receive %d      \n", receivedLength);
 
             if (receivedLength == -2)
                 continue;
 
             if (receivedLength < 0) {
+                dbgprintf ("NETWORKING: RECEIVE exit ONE\n");
+
                 return -1;
             }
 
@@ -2600,10 +2627,11 @@ extern "C" {
                         if (event != NULL && event->type != ENET_EVENT_TYPE_NONE) {
                             return 1;
                         }
-
+                        dbgprintf ("NETWORKING: what is this         \n");
                         continue;
 
                     case -1:
+                        dbgprintf ("NETWORKING: RECEIVE exit TWO\n");
                         return -1;
 
                     default:
@@ -2611,11 +2639,13 @@ extern "C" {
                 }
             }
 
+            dbgprintf ("NETWORKING: Handle message        \n");
             switch (enet_protocol_handle_incoming_commands(host, event)) {
                 case 1:
                     return 1;
 
                 case -1:
+                    dbgprintf ("NETWORKING: RECEIVE exit THREE\n");
                     return -1;
 
                 default:
@@ -2623,6 +2653,7 @@ extern "C" {
             }
         }
 
+        dbgprintf ("NETWORKING: RECEIVE exit FOUR\n");
         return -1;
     } /* enet_protocol_receive_incoming_commands */
 
@@ -3118,11 +3149,15 @@ extern "C" {
      */
     int enet_host_service(ENetHost *host, ENetEvent *event, enet_uint32 timeout) {
         enet_uint32 waitCondition;
+        // dbgprintf ("NETWORKING: Inside enet_host_service        \n");
+
 
         if (event != NULL) {
             event->type   = ENET_EVENT_TYPE_NONE;
             event->peer   = NULL;
             event->packet = NULL;
+
+            // dbgprintf ("NETWORKING: One        \n");
 
             switch (enet_protocol_dispatch_incoming_commands(host, event)) {
                 case 1:
@@ -3140,13 +3175,18 @@ extern "C" {
             }
         }
 
+        // dbgprintf ("NETWORKING: Two        \n");
+
         host->serviceTime = enet_time_get();
         timeout += host->serviceTime;
 
         do {
             if (ENET_TIME_DIFFERENCE(host->serviceTime, host->bandwidthThrottleEpoch) >= ENET_HOST_BANDWIDTH_THROTTLE_INTERVAL) {
-                enet_host_bandwidth_throttle(host);
+                // dbgprintf ("NETWORKING: THROTTLE?! That's wrong...%d, %d  \n", host->serviceTime, host->bandwidthThrottleEpoch);
+                // enet_host_bandwidth_throttle(host);
             }
+
+            dbgprintf ("NETWORKING: Outgoing commands        \n");
 
             switch (enet_protocol_send_outgoing_commands(host, event, 1)) {
                 case 1:
@@ -3163,11 +3203,17 @@ extern "C" {
                     break;
             }
 
+            dbgprintf ("NETWORKING: Incoming commands        \n");
+
+
             switch (enet_protocol_receive_incoming_commands(host, event)) {
                 case 1:
+                    dbgprintf ("NETWORKING: Incoming exit 1\n");
                     return 1;
 
                 case -1:
+                    dbgprintf ("NETWORKING: Incoming exit TWO\n");
+
                     #ifdef ENET_DEBUG
                     perror("Error receiving incoming packets");
                     #endif
@@ -3178,6 +3224,8 @@ extern "C" {
                     break;
             }
 
+            dbgprintf ("NETWORKING: Outgoing commands again?        \n");
+
             switch (enet_protocol_send_outgoing_commands(host, event, 1)) {
                 case 1:
                     return 1;
@@ -3192,6 +3240,9 @@ extern "C" {
                 default:
                     break;
             }
+
+            dbgprintf ("NETWORKING: Icoming yet again commands        \n");
+
 
             if (event != NULL) {
                 switch (enet_protocol_dispatch_incoming_commands(host, event)) {
@@ -3210,7 +3261,12 @@ extern "C" {
                 }
             }
 
+            dbgprintf ("NETWORKING: GOT HERE        \n");
+
+
             if (ENET_TIME_GREATER_EQUAL(host->serviceTime, timeout)) {
+                dbgprintf ("NETWORKING: Return early        \n");
+
                 return 0;
             }
 
@@ -3218,10 +3274,14 @@ extern "C" {
                 host->serviceTime = enet_time_get();
 
                 if (ENET_TIME_GREATER_EQUAL(host->serviceTime, timeout)) {
+                  dbgprintf ("NETWORKING: Return early 2        \n");
+
                     return 0;
                 }
 
                 waitCondition = ENET_SOCKET_WAIT_RECEIVE | ENET_SOCKET_WAIT_INTERRUPT;
+                dbgprintf ("NETWORKING: Going to sleep on socket.                   \n");
+
                 if (enet_socket_wait(host->socket, &waitCondition, ENET_TIME_DIFFERENCE(timeout, host->serviceTime)) != 0) {
                     return -1;
                 }
@@ -4552,6 +4612,7 @@ extern "C" {
      *  @param callback intercept callback
      */
     void enet_host_set_intercept(ENetHost *host, const ENetInterceptCallback callback) {
+        dbgprintf ("NETWORKING: setting callback to %X        \n", callback);
         host->intercept = callback;
     }
 
@@ -4785,20 +4846,28 @@ extern "C" {
         // Note that we don't want to return 0 from the first call, in case
         // some part of enet uses 0 as a special value (meaning time not set
         // for example).
-        static uint64_t start_time_ns = 0;
+        static uint32_t start_time_ms = 0;
 
-        struct timespec ts;
-        ts.tv_sec = GetCurrentTime();
-        ts.tv_nsec = TicksToMs(read32(HW_TIMER));
+        // Number of milliseconds since start
+        //  apparently rolls over every 37 minutes-ish, TODO watch out for this
+        uint32_t current_time_ms = TicksToMs(GetTicks());// read32(HW_TIMER));
+
+        if(start_time_ms == 0)
+        {
+            start_time_ms = current_time_ms;
+            return 1;
+        }
+
+        return current_time_ms - start_time_ms;
     // #if defined(CLOCK_MONOTONIC_RAW)
     //     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     // #else
     //     clock_gettime(CLOCK_MONOTONIC, &ts);
     // #endif
 
-        static const uint64_t ns_in_s = 1000 * 1000 * 1000;
-        static const uint64_t ns_in_ms = 1000 * 1000;
-        uint64_t current_time_ns = ts.tv_nsec + (uint64_t)ts.tv_sec * ns_in_s;
+        // static const uint64_t ns_in_s = 1000 * 1000 * 1000;
+        // static const uint64_t ns_in_ms = 1000 * 1000;
+        // uint64_t current_time_ns = ts.tv_nsec + (uint64_t)ts.tv_sec * ns_in_s;
 
         // Most of the time we just want to atomically read the start time. We
         // could just use a single CAS instruction instead of this if, but it
@@ -4807,7 +4876,7 @@ extern "C" {
         // Note that statics are auto-initialized to zero, and starting a thread
         // implies a memory barrier. So we know that whatever thread calls this,
         // it correctly sees the start_time_ns as 0 initially.
-        uint64_t offset_ns = 0; //old -> ENET_ATOMIC_READ(&start_time_ns)
+        // uint64_t offset_ns = 0; //old -> ENET_ATOMIC_READ(&start_time_ns)
         //TODO MAYBE WE NEED THIS?
         // if (offset_ns == 0) {
         //     // We still need to CAS, since two different threads can get here
@@ -4822,8 +4891,8 @@ extern "C" {
         //     offset_ns = old_value == 0 ? want_value : old_value;
         // }
 
-        uint64_t result_in_ns = current_time_ns - offset_ns;
-        return (enet_uint32)(result_in_ns / ns_in_ms);
+        // uint64_t result_in_ns = current_time_ns - offset_ns;
+        // return (enet_uint32)(result_in_ns / ns_in_ms);
     }
 
 // =======================================================================//
@@ -4966,25 +5035,48 @@ extern "C" {
 
     int enet_socket_set_option(ENetSocket socket, ENetSocketOption option, int value) {
         int result = -1;
+        dbgprintf ("NETWORKING: Setting sockopt.            \n");
+
 
         switch (option) {
             case ENET_SOCKOPT_NONBLOCK:
-                result = fcntl(socket, F_SETFL, (value ? O_NONBLOCK : 0) | (fcntl(socket, F_GETFL) & ~O_NONBLOCK));
+                dbgprintf ("NETWORKING: nonblocking? %d %d         \n", socket, value);
+
+                result = ios_fcntl(top_fd, socket, F_SETFL, IOS_O_NONBLOCK);
+
+                dbgprintf ("NETWORKING: fcntl result: %d         \n", result);
+
+                // if( value == 1) {
+                //     dbgprintf ("NETWORKING: setting nonblocking...         \n");
+                //     struct timeval tv;
+                //     tv.tv_sec = 0;
+                //     tv.tv_usec = 1;
+                //     result = setsockopt(top_fd, socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+                // }
+
                 break;
 
             case ENET_SOCKOPT_BROADCAST:
+                dbgprintf ("NETWORKING: bcast.            \n");
+
                 result = setsockopt(top_fd, socket, SOL_SOCKET, SO_BROADCAST, (char *)&value, sizeof(int));
                 break;
 
             case ENET_SOCKOPT_REUSEADDR:
+                dbgprintf ("NETWORKING: reuse.            \n");
+
                 result = setsockopt(top_fd, socket, SOL_SOCKET, SO_REUSEADDR, (char *)&value, sizeof(int));
                 break;
 
             case ENET_SOCKOPT_RCVBUF:
+                dbgprintf ("NETWORKING: rcvbuf.            \n");
+
                 result = setsockopt(top_fd, socket, SOL_SOCKET, SO_RCVBUF, (char *)&value, sizeof(int));
                 break;
 
             case ENET_SOCKOPT_SNDBUF:
+                dbgprintf ("NETWORKING: sndbuf.            \n");
+
                 result = setsockopt(top_fd, socket, SOL_SOCKET, SO_SNDBUF, (char *)&value, sizeof(int));
                 break;
 
@@ -5005,6 +5097,8 @@ extern "C" {
             }
 
             case ENET_SOCKOPT_NODELAY:
+                dbgprintf ("NETWORKING: nodelay.            \n");
+
                 result = setsockopt(top_fd, socket, IPPROTO_TCP, TCP_NODELAY, (char *)&value, sizeof(int));
                 break;
 
@@ -5095,10 +5189,12 @@ extern "C" {
         }
 
         //sentLength = sendmsg(socket, &msgHdr, MSG_NOSIGNAL);
+        dbgprintf ("NETWORKING: Sending to address %X and port %d to->sin_len %d  \n", sin.sin_addr.s_addr, sin.sin_port, sin.sin_len);
+
 
         size_t i = 0;
         for(; i < bufferCount; i++){
-          int ret = sendto(top_fd, socket, buffers[i].data, buffers[i].dataLength, MSG_NOSIGNAL);
+          int ret = sendto(top_fd, socket, buffers[i].data, buffers[i].dataLength, MSG_NOSIGNAL, &sin);
           if (ret == -1) {
               if (errno == EWOULDBLOCK) {
                   return 0;
@@ -5114,27 +5210,39 @@ extern "C" {
     } /* enet_socket_send */
 
     int enet_socket_receive(ENetSocket socket, ENetAddress *address, ENetBuffer *buffers, size_t bufferCount) {
-        // struct sockaddr_in sin;
+        struct sockaddr_in sin;
         int recvLength;
 
         // TODO WHAT FLAGS?!
         u32 flags = 0;
-        recvLength = recvfrom(top_fd, socket, buffers[0].data, buffers[0].dataLength, 0);
+        // dbgprintf ("NETWORKING: Socket receive from        \n");
+
+        recvLength = recvfrom(top_fd, socket, buffers[0].data, buffers[0].dataLength, 0, &sin);
         // recvLength = recvmsg(socket, &msgHdr, MSG_NOSIGNAL);
 
+        dbgprintf ("NETWORKING: receive  returned %d on socket: %d    \n", recvLength, socket);
+        dbgprintf ("NETWORKING: recieved from address %X and port %d   \n", sin.sin_addr.s_addr, sin.sin_port);
+
+        // TODO is this WOULDBLOCK?!
+        if (recvLength == -6) {
+            return 0;
+        }
+
+
+        // TODO THERES NO ERRNO!!!
         if (recvLength == -1) {
             if (errno == EWOULDBLOCK) {
                 return 0;
             }
-
-            return -1;
+          return 0;
+          //  return -1;
         }
 
         //TODO Set this address somehow. It used to be set by msghdr
-        // if (address != NULL) {
-        //     address->host           = sin.sin_addr;
-        //     address->port           = ENET_NET_TO_HOST_16(sin.sin_port);
-        // }
+        if (address != NULL) {
+            address->host           = sin.sin_addr;
+            address->port           = ENET_NET_TO_HOST_16(sin.sin_port);
+        }
 
         return recvLength;
     } /* enet_socket_receive */

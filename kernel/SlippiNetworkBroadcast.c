@@ -98,7 +98,7 @@ s32 do_broadcast(void)
 	if (TimerDiffSeconds(broadcast_ts) < BROADCAST_PERIOD)
 		return 0;
 
-	res = sendto(top_fd, discover_sock, &ready_msg, sizeof(ready_msg), 0);
+	res = sendto(top_fd, discover_sock, &ready_msg, sizeof(ready_msg), 0, NULL);
 	broadcast_ts = read32(HW_TIMER);
 	return res;
 }
@@ -114,7 +114,7 @@ static u32 SlippiNetworkBroadcastHandlerThread(void *arg)
 
 	while (1)
 	{
-		status = getConnectionStatus();
+		status = CONN_STATUS_NO_CLIENT;//getConnectionStatus();
 		if (status != CONN_STATUS_CONNECTED)
 			do_broadcast();
 		mdelay(THREAD_CYCLE_TIME_MS);

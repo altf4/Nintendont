@@ -64,7 +64,7 @@ int checkCrash(int socket)
 	}
 
 	// When we detect a crash, send a packet to the connected client
-	sendto(top_fd, debug_sock, crashmsg, sizeof(crashmsg), 0);
+	sendto(top_fd, debug_sock, crashmsg, sizeof(crashmsg), 0, NULL);
 	return 1;
 }
 
