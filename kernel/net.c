@@ -227,6 +227,7 @@ s32 sendto(s32 fd, s32 socket, void *data, s32 len, u32 flags, struct sockaddr_i
 	 * user-provided pointer should always be aligned, lol?)
 	 */
 
+//TODO NOT NEEDED ANYMORE. We already need to copy before this so we align there
 	u8 *message_buf = (u8*)heap_alloc_aligned(0, len, 32);
 	if (message_buf == NULL)
 		return -1;

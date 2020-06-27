@@ -1789,7 +1789,7 @@ extern "C" {
         verifyCommand.verifyConnect.packetThrottleDeceleration  = ENET_HOST_TO_NET_32(peer->packetThrottleDeceleration);
         verifyCommand.verifyConnect.connectID                   = peer->connectID;
 
-        dbgprintf ("NETWORKING: queue outgoing verify command! \n");
+        dbgprintf ("NETWORKING: queue outgoing verify command! sizeof(verifyCommand): %d \n", sizeof(verifyCommand));
 
         enet_peer_queue_outgoing_command(peer, &verifyCommand, NULL, 0, 0);
         return peer;
@@ -2972,6 +2972,8 @@ extern "C" {
         size_t shouldCompress = 0;
         host->continueSending = 1;
 
+        dbgprintf ("NETWORKING dispatch with buffer count: %d", host->bufferCount);
+
         while (host->continueSending)
             for (host->continueSending = 0, currentPeer = host->peers; currentPeer < &host->peers[host->peerCount]; ++currentPeer) {
                 if (currentPeer->state == ENET_PEER_STATE_DISCONNECTED || currentPeer->state == ENET_PEER_STATE_ZOMBIE) {
@@ -3059,17 +3061,17 @@ extern "C" {
                 }
 
                 shouldCompress = 0;
-                if (host->compressor.context != NULL && host->compressor.compress != NULL) {
-                    size_t originalSize = host->packetSize - sizeof(ENetProtocolHeader),
-                      compressedSize    = host->compressor.compress(host->compressor.context, &host->buffers[1], host->bufferCount - 1, originalSize, host->packetData[1], originalSize);
-                    if (compressedSize > 0 && compressedSize < originalSize) {
-                        host->headerFlags |= ENET_PROTOCOL_HEADER_FLAG_COMPRESSED;
-                        shouldCompress     = compressedSize;
-                        #ifdef ENET_DEBUG_COMPRESS
-                        printf("peer %u: compressed %u->%u (%u%%)\n", currentPeer->incomingPeerID, originalSize, compressedSize, (compressedSize * 100) / originalSize);
-                        #endif
-                    }
-                }
+                // if (host->compressor.context != NULL && host->compressor.compress != NULL) {
+                //     size_t originalSize = host->packetSize - sizeof(ENetProtocolHeader),
+                //       compressedSize    = host->compressor.compress(host->compressor.context, &host->buffers[1], host->bufferCount - 1, originalSize, host->packetData[1], originalSize);
+                //     if (compressedSize > 0 && compressedSize < originalSize) {
+                //         host->headerFlags |= ENET_PROTOCOL_HEADER_FLAG_COMPRESSED;
+                //         shouldCompress     = compressedSize;
+                //         #ifdef ENET_DEBUG_COMPRESS
+                //         printf("peer %u: compressed %u->%u (%u%%)\n", currentPeer->incomingPeerID, originalSize, compressedSize, (compressedSize * 100) / originalSize);
+                //         #endif
+                //     }
+                // }
 
                 if (currentPeer->outgoingPeerID < ENET_PROTOCOL_MAXIMUM_PEER_ID) {
                     host->headerFlags |= currentPeer->outgoingSessionID << ENET_PROTOCOL_HEADER_SESSION_SHIFT;
@@ -3083,12 +3085,15 @@ extern "C" {
                 }
 
                 if (shouldCompress > 0) {
+                    dbgprintf ("NETWORKING WAT why is this compressing?! %d ", shouldCompress);
+
                     host->buffers[1].data       = host->packetData[1];
                     host->buffers[1].dataLength = shouldCompress;
                     host->bufferCount = 2;
                 }
 
                 currentPeer->lastSendTime = host->serviceTime;
+                dbgprintf ("NETWORKING enet_socket_send call. Buffer count: %d", host->bufferCount);
                 sentLength = enet_socket_send(host->socket, &currentPeer->address, host->buffers, host->bufferCount);
                 enet_protocol_remove_sent_unreliable_commands(currentPeer);
 
@@ -3943,6 +3948,8 @@ extern "C" {
     void enet_peer_setup_outgoing_command(ENetPeer *peer, ENetOutgoingCommand *outgoingCommand) {
         ENetChannel *channel = &peer->channels[outgoingCommand->command.header.channelID];
         peer->outgoingDataTotal += enet_protocol_command_size(outgoingCommand->command.header.command) + outgoingCommand->fragmentLength;
+
+        dbgprintf ("NETWORKING: Setup command size %d  \n", peer->outgoingDataTotal);
 
         if (outgoingCommand->command.header.channelID == 0xFF) {
             ++peer->outgoingReliableSequenceNumber;
@@ -5190,26 +5197,40 @@ extern "C" {
         }
 
         //sentLength = sendmsg(socket, &msgHdr, MSG_NOSIGNAL);
-        dbgprintf ("NETWORKING: Sending to address %X and port %d to->sin_len %d  \n", sin.sin_addr.s_addr, sin.sin_port, sin.sin_len);
 
-
+        size_t total_buffer_size = 0;
         size_t i = 0;
         for(; i < bufferCount; i++){
-          int ret = sendto(top_fd, socket, buffers[i].data, buffers[i].dataLength, MSG_NOSIGNAL, &sin);
-          dbgprintf ("NETWORKING: Send ret val %d  \n", ret);
-
-          if (ret == -1) {
-              if (errno == EWOULDBLOCK) {
-                  return 0;
-              }
-              return -1;
-          }
-          sentLength += ret;
+          total_buffer_size += buffers[i].dataLength;
         }
 
+        //TODO OOM CHECKING?
+        // Note: This needs to be aligned for the call to sendto
+        u8 *message_buf = (u8*)heap_alloc_aligned(0, total_buffer_size, 32);
 
+        i = 0;
+        size_t offset = 0;
+        for(; i < bufferCount; i++){
+          memcpy(message_buf + offset, buffers[i].data, buffers[i].dataLength);
+          offset += buffers[i].dataLength;
+        }
 
-        return sentLength;
+        // Actually send the data now!
+        dbgprintf ("NETWORKING: Sending to address %X and port %d to->sin_len %d datalength: %d \n", sin.sin_addr.s_addr, sin.sin_port, sin.sin_len, buffers[i].dataLength);
+        int ret = sendto(top_fd, socket, message_buf, total_buffer_size, MSG_NOSIGNAL, &sin);
+        dbgprintf ("NETWORKING: Send ret val %d  \n", ret);
+
+        heap_free(0, message_buf);
+
+        //TODO WHAT IS WOULDBLOCK ON SEND?
+        if (ret == -1) {
+            if (errno == EWOULDBLOCK) {
+                return 0;
+            }
+            return -1;
+        }
+
+        return ret;
     } /* enet_socket_send */
 
     int enet_socket_receive(ENetSocket socket, ENetAddress *address, ENetBuffer *buffers, size_t bufferCount) {
